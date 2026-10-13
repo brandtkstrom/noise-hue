@@ -36,6 +36,26 @@ describe('NoiseEngine', () => {
     expect(NoiseEngine.isSupported()).toBe(true);
   });
 
+  it('resumes on every play unless closed (suspend in flight, iOS interrupted)', async () => {
+    const { factory, contexts } = fakeFactory();
+    const e = new NoiseEngine(factory);
+    await e.play('white', O, 0.5);
+    const c = contexts[0]!;
+    expect(c.resumeCalls).toBe(1);
+    // running (e.g. a suspend() still pending from the stop window): resume anyway
+    e.pause();
+    await e.play('white', O, 0.5);
+    expect(c.resumeCalls).toBe(2);
+    c.state = 'interrupted';
+    e.pause();
+    await e.play('white', O, 0.5);
+    expect(c.resumeCalls).toBe(3);
+    c.state = 'closed';
+    e.pause();
+    await e.play('white', O, 0.5);
+    expect(c.resumeCalls).toBe(3);
+  });
+
   it('creates the context lazily and resumes it on play', async () => {
     const { factory, contexts } = fakeFactory();
     const e = new NoiseEngine(factory);

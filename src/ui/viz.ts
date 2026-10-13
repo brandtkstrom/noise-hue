@@ -142,7 +142,8 @@ export function mountViz(deps: {
       // only from the loop, never from a store-triggered refresh (no re-entrant ticks)
       onFrame?.();
     }
-    raf = requestAnimationFrame(frame);
+    // a store change inside onFrame may already have scheduled the next frame via refresh()
+    if (raf === null && mode() !== 'idle') raf = requestAnimationFrame(frame);
   }
 
   function refresh(): void {

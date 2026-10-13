@@ -98,6 +98,37 @@ describe('mountTransport: play/pause', () => {
     expect(app.get().playing).toBe(false);
   });
 
+  it('a rejected resume reverts to paused', async () => {
+    vi.mocked(engine.play).mockImplementationOnce(() => Promise.reject(new Error('no resume')));
+    el('#play').click();
+    expect(app.get().playing).toBe(true);
+    await flush();
+    expect(app.get().playing).toBe(false);
+    expect(el('#status').textContent?.trim()).toBe('Paused');
+  });
+
+  it('a stale resume rejection does not pause a later session', async () => {
+    let reject!: (e: Error) => void;
+    vi.mocked(engine.play).mockImplementationOnce(() => new Promise<void>((_, r) => (reject = r)));
+    el('#play').click();
+    el('#play').click();
+    el('#play').click();
+    reject(new Error('late'));
+    await flush();
+    expect(app.get().playing).toBe(true);
+  });
+
+  it('an AudioContext constructor failure shows #unsupported and stays paused', () => {
+    vi.mocked(engine.play).mockImplementationOnce(() => {
+      throw new Error('too many contexts');
+    });
+    expect(isHidden('#unsupported')).toBe(true);
+    el('#play').click();
+    expect(isHidden('#unsupported')).toBe(false);
+    expect(app.get().playing).toBe(false);
+    expect(el('#status').textContent?.trim()).toBe('Paused');
+  });
+
   it('play gain is 0 when muted', () => {
     setup({ muted: true });
     el('#play').click();
@@ -117,13 +148,13 @@ describe('mountTransport: play/pause', () => {
   });
 
   it('status reads Paused with color #F2867E', () => {
-    expect(el('#status').textContent).toBe('Paused');
+    expect(el('#status').textContent?.trim()).toBe('Paused');
     expect(el('#status').style.color).toBe('rgb(242, 134, 126)');
   });
 
   it('status reads Playing · White with the playing color', () => {
     el('#play').click();
-    expect(el('#status').textContent).toBe('Playing · White');
+    expect(el('#status').textContent?.trim()).toBe('Playing · White');
     expect(el('#status').style.color).toBe('rgb(116, 214, 154)');
   });
 });
@@ -160,6 +191,15 @@ describe('mountTransport: volume and mute', () => {
     expect(mute.getAttribute('aria-label')).toBe('Mute');
   });
 
+  it('aria-pressed follows effective volume 0 (Unmute) even when not muted', () => {
+    slideVol(0);
+    expect(settings.get().muted).toBe(false);
+    expect(el('#mute').getAttribute('aria-label')).toBe('Unmute');
+    expect(el('#mute').getAttribute('aria-pressed')).toBe('true');
+    slideVol(30);
+    expect(el('#mute').getAttribute('aria-pressed')).toBe('false');
+  });
+
   it('low icon below 50', () => {
     slideVol(20);
     expect(isHidden('#mute .icon-vol-low')).toBe(false);
@@ -184,7 +224,7 @@ describe('mountTransport: volume and mute', () => {
   it('status shows Muted while playing muted', () => {
     el('#play').click();
     el('#mute').click();
-    expect(el('#status').textContent).toBe('Muted · White');
+    expect(el('#status').textContent?.trim()).toBe('Muted · White');
     expect(el('#status').style.color).toBe('rgb(235, 198, 106)');
   });
 });
@@ -249,11 +289,11 @@ describe('mountTransport: sleep timer', () => {
     expect(btn.getAttribute('aria-pressed')).toBe('true');
     expect(isHidden('#timer-label')).toBe(true);
     expect(el('#timer-label').textContent).not.toBe('15m');
-    expect(el('#status').textContent).toBe('Paused');
+    expect(el('#status').textContent?.trim()).toBe('Paused');
     el('#play').click();
     expect(el('#timer-label').textContent).toBe('15m');
     expect(isHidden('#timer-label')).toBe(false);
-    expect(el('#status').textContent).toBe('Playing · White · 15m left');
+    expect(el('#status').textContent?.trim()).toBe('Playing · White · 15m left');
     expect(app.get().timerLabel).toBe('15m');
   });
 
@@ -264,7 +304,25 @@ describe('mountTransport: sleep timer', () => {
     clock += 3 * 60_000 + 1;
     t.tick();
     expect(el('#timer-label').textContent).toBe('27m');
-    expect(el('#status').textContent).toBe('Playing · White · 27m left');
+    expect(el('#status').textContent?.trim()).toBe('Playing · White · 27m left');
+  });
+
+  it('only state changes reach the live region; the countdown is not announced', () => {
+    expect(el('#status').hasAttribute('aria-live')).toBe(false);
+    const live = el('#status [aria-live="polite"]');
+    el('#play').click();
+    openPopover();
+    chooseMinutes(30);
+    expect(live.textContent).toBe('Playing · White');
+    clock += 3 * 60_000 + 1;
+    t.tick();
+    expect(live.textContent).toBe('Playing · White');
+    expect(el('#status').textContent?.trim()).toBe('Playing · White · 27m left');
+    const suffix = el('#status-timer');
+    expect(suffix.getAttribute('aria-hidden')).toBe('true');
+    expect(live.contains(suffix)).toBe(false);
+    el('#mute').click();
+    expect(live.textContent).toBe('Muted · White');
   });
 
   it('selected option is aria-pressed; Off is pressed when no timer', () => {
@@ -374,7 +432,7 @@ describe('mountTransport: sleep timer', () => {
     await flush();
     expect(engine.pause).not.toHaveBeenCalled();
     expect(app.get().playing).toBe(true);
-    expect(el('#status').textContent).toBe('Playing · White');
+    expect(el('#status').textContent?.trim()).toBe('Playing · White');
   });
 
   it('choosing 60 mid-fade cancels the fade and restarts the countdown', async () => {
@@ -417,7 +475,7 @@ describe('mountTransport: sleep timer', () => {
     expect(engine.pause).toHaveBeenCalledTimes(1);
     expect(app.get().playing).toBe(false);
     expect(timer.phase()).toBe('off');
-    expect(el('#status').textContent).toBe('Paused');
+    expect(el('#status').textContent?.trim()).toBe('Paused');
   });
 });
 
@@ -440,6 +498,23 @@ describe('mountTransport: fullscreen', () => {
     expect(e.defaultPrevented).toBe(true);
     expect(el('#app').classList.contains('is-immersive')).toBe(false);
     expect(overlay.hasAttribute('hidden')).toBe(true);
+  });
+
+  it('after Tab moves focus off the overlay, a key still exits', () => {
+    el('#fullscreen').click();
+    key(el('#exit-overlay'), 'Tab');
+    const viz = el('#viz-btn');
+    viz.focus();
+    const tab = key(viz, 'Tab');
+    expect(tab.defaultPrevented).toBe(false);
+    expect(app.get().immersive).toBe(true);
+    const e = key(viz, 'Escape');
+    expect(e.defaultPrevented).toBe(true);
+    expect(app.get().immersive).toBe(false);
+    expect(isHidden('#exit-overlay')).toBe(true);
+    // listener is gone once immersive mode ends
+    const later = key(document.body, 'a');
+    expect(later.defaultPrevented).toBe(false);
   });
 
   it('clicking the overlay exits', () => {

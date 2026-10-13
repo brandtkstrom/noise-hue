@@ -88,8 +88,9 @@ export class NoiseEngine {
   play(id: NoiseId, o: SoundOptions, gain: number): Promise<void> {
     const g = this.ensureGraph(o);
     const { ctx } = g;
-    // resume synchronously inside the user gesture; await at the end
-    const resumed = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve();
+    // resume synchronously inside the user gesture; await at the end. Always resume (unless
+    // closed): a suspend() may still be in flight, and iOS reports 'interrupted'.
+    const resumed = ctx.state !== 'closed' ? ctx.resume() : Promise.resolve();
     if (this.stopTimer !== null) {
       clearTimeout(this.stopTimer);
       this.stopTimer = null;

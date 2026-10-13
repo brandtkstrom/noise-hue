@@ -23,7 +23,7 @@ export type EnginePort = Pick<
 
 const setHidden = (el: Element, hidden: boolean): void => setAttr(el, 'hidden', hidden ? '' : null);
 
-/** Keys that move focus or are modifiers; every other key on the exit overlay exits. */
+/** Keys that move focus or are modifiers; every other key while immersive exits. */
 const PASS_KEYS = new Set(['Tab', 'Shift', 'Meta', 'Control', 'Alt']);
 
 /**
@@ -43,6 +43,8 @@ export function mountTransport(deps: {
   const iconPlay = $('.icon-play', playBtn);
   const iconPause = $('.icon-pause', playBtn);
   const status = $('#status');
+  const statusLive = $('#status-text', status);
+  const statusTimer = $('#status-timer', status);
   const muteBtn = $('#mute');
   const iconMuted = $('.icon-vol-muted', muteBtn);
   const iconLow = $('.icon-vol-low', muteBtn);
@@ -53,6 +55,7 @@ export function mountTransport(deps: {
   const vizBtn = $('#viz-btn');
   const fsBtn = $('#fullscreen');
   const overlay = $('#exit-overlay');
+  const unsupported = $('#unsupported');
 
   const popover = mountTimerPopover({
     ui,
@@ -73,9 +76,20 @@ export function mountTransport(deps: {
   // ── play / pause ──
   function play(): void {
     const s = settings.get();
-    session++;
-    // must run synchronously inside the click (autoplay gesture requirement)
-    engine.play(s.type, optionsOf(s), volumeGain(s.volume, s.muted)).catch(() => {});
+    const mine = ++session;
+    let resumed: Promise<void>;
+    try {
+      // must run synchronously inside the click (autoplay gesture requirement)
+      resumed = engine.play(s.type, optionsOf(s), volumeGain(s.volume, s.muted));
+    } catch {
+      // the AudioContext constructor can throw despite isSupported() (sandbox, context limit)
+      setHidden(unsupported, false);
+      return;
+    }
+    // a context that refuses to resume stays silent: don't claim Playing
+    resumed.catch(() => {
+      if (mine === session && app.get().playing) pause();
+    });
     app.set({ playing: true });
     timer.onPlay();
     popover.sync();
@@ -109,8 +123,16 @@ export function mountTransport(deps: {
   vizBtn.addEventListener('click', toggleCompare);
 
   // ── fullscreen / immersive ──
+  // on document, not the overlay: Tab may move focus off it and must not trap the user
+  function onImmersiveKey(e: KeyboardEvent): void {
+    if (PASS_KEYS.has(e.key)) return;
+    e.preventDefault();
+    exitImmersive();
+  }
+
   function enterImmersive(): void {
     app.set({ immersive: true });
+    document.addEventListener('keydown', onImmersiveKey);
     setHidden(overlay, false);
     overlay.focus({ preventScroll: true });
     try {
@@ -126,6 +148,7 @@ export function mountTransport(deps: {
   function exitImmersive(): void {
     if (!app.get().immersive) return;
     app.set({ immersive: false });
+    document.removeEventListener('keydown', onImmersiveKey);
     setHidden(overlay, true);
     try {
       if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
@@ -139,11 +162,6 @@ export function mountTransport(deps: {
 
   fsBtn.addEventListener('click', enterImmersive);
   overlay.addEventListener('click', exitImmersive);
-  overlay.addEventListener('keydown', (e) => {
-    if (PASS_KEYS.has(e.key)) return;
-    e.preventDefault();
-    exitImmersive();
-  });
   document.addEventListener('fullscreenchange', () => {
     if (!document.fullscreenElement) exitImmersive();
   });
@@ -165,7 +183,8 @@ export function mountTransport(deps: {
     setAttr(vol, 'aria-valuetext', volumeText(s));
     setText(readout, volumeShort(s));
     const muteLabel = eff === 0 ? 'Unmute' : 'Mute';
-    setAttr(muteBtn, 'aria-pressed', s.muted ? 'true' : 'false');
+    // pressed = silent (muted or volume 0), matching the Unmute label
+    setAttr(muteBtn, 'aria-pressed', eff === 0 ? 'true' : 'false');
     setAttr(muteBtn, 'aria-label', muteLabel);
     setAttr(muteBtn, 'title', muteLabel);
     setHidden(iconMuted, eff !== 0);
@@ -179,7 +198,10 @@ export function mountTransport(deps: {
     toggleClass(appEl, 'is-immersive', a.immersive);
     toggleClass(appEl, 'is-audible', a.immersive && a.playing && eff > 0);
 
-    setText(status, statusText(a.playing, s, a.timerLabel));
+    // the live region announces state changes only; the per-minute countdown is aria-hidden
+    // (the timer button's label carries it for assistive tech)
+    setText(statusLive, statusText(a.playing, s, null));
+    setText(statusTimer, a.playing && a.timerLabel !== null ? ` · ${a.timerLabel} left` : '');
     const color = statusColor(a.playing, s);
     if (color !== statusHex) {
       statusHex = color;

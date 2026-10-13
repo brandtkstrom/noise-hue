@@ -201,6 +201,19 @@ describe('background and loop cadence', () => {
     expect(engine.readWaveform).not.toHaveBeenCalled();
   });
 
+  it('a store change inside onFrame leaves exactly one pending frame', () => {
+    mount();
+    let n = 0;
+    onFrame.mockImplementation(() => app.set({ timerLabel: `${++n}m` }));
+    app.set({ playing: true });
+    expect(frames.length).toBe(1);
+    for (let i = 0; i < 5; i++) {
+      step();
+      expect(frames.length).toBe(1);
+    }
+    expect(onFrame).toHaveBeenCalledTimes(5);
+  });
+
   it('pausing with volume 0 stops the loop', () => {
     mount({ volume: 0 });
     app.set({ playing: true });

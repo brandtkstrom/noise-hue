@@ -298,7 +298,10 @@
                 <rect x="14" y="5" width="4" height="14" rx="1"></rect>
               </svg>
             </button>
-            <p id="status" class="status" aria-live="polite">Paused</p>
+            <p id="status" class="status">
+              <span id="status-text" aria-live="polite">Paused</span
+              ><span id="status-timer" aria-hidden="true"></span>
+            </p>
             <div class="tp-icons">
               <div class="timer-wrap">
                 <button

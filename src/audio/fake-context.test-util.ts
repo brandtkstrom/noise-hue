@@ -155,7 +155,7 @@ export class FakeAnalyser extends FakeNode {
 export class FakeAudioContext {
   currentTime = 0;
   sampleRate: number;
-  state: 'running' | 'suspended' | 'closed' = 'suspended';
+  state: 'running' | 'suspended' | 'closed' | 'interrupted' = 'suspended';
   destination = new FakeNode('destination');
   resumeCalls = 0;
   suspendCalls = 0;
