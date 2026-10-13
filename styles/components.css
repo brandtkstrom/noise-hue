@@ -1292,6 +1292,15 @@
   }
 }
 
+/* no Web Audio: audio controls are disabled (#unsupported is shown) */
+.tp-play:disabled,
+.tp-icon:disabled,
+.tp-mute:disabled,
+.range:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ───────── Reduced motion ───────── */
 
 @media (prefers-reduced-motion: reduce) {
