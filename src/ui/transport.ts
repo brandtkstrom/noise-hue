@@ -16,7 +16,10 @@ import type { AppState } from './app-state';
 import { $, setAttr, setText, toggleClass } from './dom';
 import { mountTimerPopover } from './timer-popover';
 
-export type EnginePort = Pick<NoiseEngine, 'play' | 'pause' | 'setLevel' | 'fadeOut' | 'playing'>;
+export type EnginePort = Pick<
+  NoiseEngine,
+  'play' | 'pause' | 'setLevel' | 'fadeOut' | 'cancelFade' | 'playing'
+>;
 
 const setHidden = (el: Element, hidden: boolean): void => setAttr(el, 'hidden', hidden ? '' : null);
 
@@ -51,7 +54,16 @@ export function mountTransport(deps: {
   const fsBtn = $('#fullscreen');
   const overlay = $('#exit-overlay');
 
-  const popover = mountTimerPopover({ ui, app, timer });
+  const popover = mountTimerPopover({
+    ui,
+    app,
+    timer,
+    // re-choosing (Off or a new length) mid-fade: drop the fade, keep playing at full level
+    onAbortFade() {
+      session++;
+      engine.cancelFade();
+    },
+  });
 
   let lastVolume = settings.get().volume > 0 ? settings.get().volume : CONFIG.defaultVolume;
   /** Bumped on every play/pause so a stale fade resolution can't pause a later session. */

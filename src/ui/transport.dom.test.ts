@@ -42,6 +42,8 @@ function stubEngine(): StubEngine {
       playing = false;
     }),
     setLevel: vi.fn(),
+    // no-op on purpose: tests then deliver a late 'done' to check the transport's own guard
+    cancelFade: vi.fn(),
     fadeOut: vi.fn(
       () =>
         new Promise<'done' | 'cancelled'>((resolve) => {
@@ -348,6 +350,61 @@ describe('mountTransport: sleep timer', () => {
     await flush();
     expect(engine.pause).not.toHaveBeenCalled();
     expect(app.get().playing).toBe(true);
+  });
+
+  function startFade(): void {
+    el('#play').click();
+    openPopover();
+    chooseMinutes(15);
+    clock += 14 * 60_000;
+    t.tick();
+    expect(engine.fadeOut).toHaveBeenCalledTimes(1);
+    expect(timer.phase()).toBe('fading');
+  }
+
+  it('choosing Off mid-fade cancels the fade and keeps playing', async () => {
+    startFade();
+    const resolveDone = engine.fadeResolve;
+    openPopover();
+    chooseMinutes(0);
+    expect(engine.cancelFade).toHaveBeenCalledTimes(1);
+    expect(timer.phase()).toBe('off');
+    // even a 'done' arriving late must not pause
+    resolveDone?.('done');
+    await flush();
+    expect(engine.pause).not.toHaveBeenCalled();
+    expect(app.get().playing).toBe(true);
+    expect(el('#status').textContent).toBe('Playing · White');
+  });
+
+  it('choosing 60 mid-fade cancels the fade and restarts the countdown', async () => {
+    startFade();
+    const resolveDone = engine.fadeResolve;
+    openPopover();
+    chooseMinutes(60);
+    expect(engine.cancelFade).toHaveBeenCalledTimes(1);
+    expect(timer.phase()).toBe('running');
+    expect(el('#timer-label').textContent).toBe('60m');
+    resolveDone?.('done');
+    await flush();
+    expect(engine.pause).not.toHaveBeenCalled();
+    expect(app.get().playing).toBe(true);
+    // the new timer still fades and pauses on its own schedule
+    clock += 59 * 60_000;
+    t.tick();
+    expect(engine.fadeOut).toHaveBeenCalledTimes(2);
+    engine.fadeResolve?.('done');
+    await flush();
+    expect(engine.pause).toHaveBeenCalledTimes(1);
+  });
+
+  it('choosing a timer while running (not fading) does not touch the engine fade', () => {
+    el('#play').click();
+    openPopover();
+    chooseMinutes(15);
+    openPopover();
+    chooseMinutes(30);
+    expect(engine.cancelFade).not.toHaveBeenCalled();
   });
 
   it('finished (even with startFade after a clock jump) pauses immediately', () => {

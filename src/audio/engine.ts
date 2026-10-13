@@ -94,7 +94,7 @@ export class NoiseEngine {
       clearTimeout(this.stopTimer);
       this.stopTimer = null;
     }
-    this.cancelFade();
+    this.abortFade();
     this.applyOptions(o);
     if (!this.voice || this.voice.key !== colorSignature(id, o)) this.startVoice(id, o);
     this.setMaster(gain, 0.08);
@@ -107,7 +107,7 @@ export class NoiseEngine {
     if (!g) return;
     this.isPlaying = false;
     this.setMaster(0, 0.06);
-    this.cancelFade(false);
+    this.abortFade(false);
     if (this.regenTimer !== null) {
       clearTimeout(this.regenTimer);
       this.regenTimer = null;
@@ -214,7 +214,7 @@ export class NoiseEngine {
 
   /** Linear fade of the timer gain to 0; resolves 'done' (caller then pauses). */
   fadeOut(seconds: number): Promise<FadeResult> {
-    this.cancelFade(false);
+    this.abortFade(false);
     const g = this.graph;
     if (!g || !this.isPlaying) return Promise.resolve('done');
     const p = g.timerGain.gain;
@@ -232,11 +232,16 @@ export class NoiseEngine {
     });
   }
 
+  /** Abandons a running fadeOut (it resolves 'cancelled') and restores the timer gain to 1. */
+  cancelFade(): void {
+    this.abortFade(true);
+  }
+
   dispose(): void {
     for (const t of [this.stopTimer, this.regenTimer]) if (t !== null) clearTimeout(t);
     this.stopTimer = null;
     this.regenTimer = null;
-    this.cancelFade(false);
+    this.abortFade(false);
     this.isPlaying = false;
     this.stopAllVoices();
     if (this.graph) {
@@ -440,7 +445,7 @@ export class NoiseEngine {
    * gain returns to 1 now (play); otherwise it holds its current value until
    * the voice stops (pause), so pausing mid-fade never swells the level.
    */
-  private cancelFade(restore = true): void {
+  private abortFade(restore = true): void {
     if (this.fadeTimer !== null) {
       clearTimeout(this.fadeTimer);
       this.fadeTimer = null;

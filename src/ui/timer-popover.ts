@@ -19,8 +19,10 @@ export function mountTimerPopover(deps: {
   ui: Store<UiPrefs>;
   app: Store<AppState>;
   timer: SleepTimer;
+  /** Called before a new choice replaces a timer that is fading out. */
+  onAbortFade: () => void;
 }): TimerPopover {
-  const { ui, app, timer } = deps;
+  const { ui, app, timer, onAbortFade } = deps;
   const btn = $('#timer-btn');
   const label = $('#timer-label');
   const pop = $('#timer-popover');
@@ -51,6 +53,7 @@ export function mountTimerPopover(deps: {
   }
 
   function choose(minutes: number | null): void {
+    if (timer.phase() === 'fading') onAbortFade();
     timer.set(minutes, app.get().playing);
     chosen = minutes;
     if (minutes !== null) ui.set({ sleepMinutes: minutes });

@@ -158,6 +158,23 @@ describe('NoiseEngine', () => {
     expect(timerGainOf(contexts[0]!).gain.last).toBe(1);
   });
 
+  it('cancelFade resolves the pending fade cancelled and restores timerGain to 1', async () => {
+    const { factory, contexts } = fakeFactory();
+    const e = new NoiseEngine(factory);
+    await e.play('white', O, 0.5);
+    const p = e.fadeOut(60);
+    e.cancelFade();
+    await expect(p).resolves.toBe('cancelled');
+    expect(timerGainOf(contexts[0]!).gain.last).toBe(1);
+    expect(e.playing).toBe(true);
+    vi.advanceTimersByTime(60000);
+  });
+
+  it('cancelFade is a no-op without a graph', () => {
+    const { factory } = fakeFactory();
+    expect(() => new NoiseEngine(factory).cancelFade()).not.toThrow();
+  });
+
   it('a second fadeOut cancels the first', async () => {
     const { factory } = fakeFactory();
     const e = new NoiseEngine(factory);
