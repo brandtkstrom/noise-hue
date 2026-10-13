@@ -1153,7 +1153,7 @@
 
 /* ───────── Mobile sizes (< 62.5em): touch targets and larger type ───────── */
 
-@media (width < 62.5em) {
+@media (max-width: 62.4375em) {
   .color-list {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1269,13 +1269,13 @@
   }
 }
 
-@media (width < 50em) {
+@media (max-width: 49.9375em) {
   .color-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (width < 31.25em) {
+@media (max-width: 31.1875em) {
   .color-list {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1311,6 +1311,11 @@
   .dot-bounce-a,
   .dot-bounce-b {
     animation: none;
+  }
+
+  /* the exit hint still shows for 3 s, then disappears at once instead of fading */
+  .exit-hint {
+    animation-timing-function: step-end;
   }
 
   .color-btn,

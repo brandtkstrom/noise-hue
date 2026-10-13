@@ -52,6 +52,7 @@ export function mountPanels(ui: Store<UiPrefs>, app: Store<AppState>): void {
     const keys = KEYS[side];
     const slot = $(`#slot-${side}`);
     const pin = $(`#pin-${side}`);
+    const rail = $(`#rail-${side}`);
     const fold = $(`#fold-${side}`);
     const foldAction = $('.fold-action', fold);
 
@@ -59,9 +60,10 @@ export function mountPanels(ui: Store<UiPrefs>, app: Store<AppState>): void {
       const pinned = !ui.get()[keys.pin];
       ui.set({ [keys.pin]: pinned });
       if (!pinned) {
-        // unpinning collapses right away instead of waiting for the pointer to leave
+        // keep keyboard focus nearby on the rail (focus first: focusin lifts suppression),
+        // then collapse right away instead of waiting for the pointer to leave
+        rail.focus({ preventScroll: true });
         app.set({ [keys.suppress]: true });
-        blurActive();
       }
     });
 

@@ -137,7 +137,7 @@ input:focus-visible {
 
 /* ───────── Desktop (≥ 62.5em): three columns, collapsible side panes ───────── */
 
-@media (width >= 62.5em) {
+@media (min-width: 62.5em) {
   .app {
     display: grid;
     grid-template-columns: var(--lw, var(--pane-left-w)) minmax(0, 1fr) var(
@@ -224,7 +224,7 @@ input:focus-visible {
 
 /* ───────── Mobile (< 62.5em): single column stack, foldable panels ───────── */
 
-@media (width < 62.5em) {
+@media (max-width: 62.4375em) {
   .app {
     display: flex;
     flex-direction: column;

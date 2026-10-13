@@ -168,6 +168,16 @@ describe('mountPanels', () => {
     expect(el('#pin-left').getAttribute('aria-pressed')).toBe('false');
   });
 
+  it("unpinning moves focus to that side's rail and keeps the panel suppressed", () => {
+    for (const side of ['left', 'right'] as const) {
+      setup();
+      el(`#pin-${side}`).focus();
+      el(`#pin-${side}`).click();
+      expect(document.activeElement).toBe(el(`#rail-${side}`));
+      expect(el(`#slot-${side}`).classList.contains('is-suppressed')).toBe(true);
+    }
+  });
+
   it('clicking pin when unpinned pins without suppressing', () => {
     setup({ pinRight: false });
     el('#pin-right').click();

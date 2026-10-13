@@ -71,6 +71,25 @@ describe('mountPresets', () => {
     expect(chips()[0]?.querySelector('.preset-apply')?.getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('Enter or Escape while an IME composition is active does nothing', () => {
+    saveBtn().click();
+    nameInput().value = '雨';
+    for (const k of ['Enter', 'Escape']) {
+      const e = new KeyboardEvent('keydown', {
+        key: k,
+        isComposing: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      nameInput().dispatchEvent(e);
+      expect(e.defaultPrevented).toBe(false);
+    }
+    expect(save).not.toHaveBeenCalled();
+    expect(nameInput().hidden).toBe(false);
+    key(nameInput(), 'Enter');
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
   it('Escape and blur cancel without saving', () => {
     saveBtn().click();
     key(nameInput(), 'Escape');

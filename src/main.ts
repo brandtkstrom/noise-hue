@@ -23,7 +23,7 @@ function storageOrNull(): Storage | null {
   }
 }
 
-/** Debounced writer with a flush for page hide. */
+/** Debounced writer with a flush for page hide / visibility hidden. */
 function debounced<T>(write: (v: T) => void): { push(v: T): void; flush(): void } {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let pending: { v: T } | null = null;
@@ -74,9 +74,14 @@ function main(): void {
   const saveUi = debounced(persist.saveUi);
   settings.subscribe((s) => saveSettings.push(s));
   ui.subscribe((u) => saveUi.push(u));
-  addEventListener('pagehide', () => {
+  const flushSaves = (): void => {
     saveSettings.flush();
     saveUi.flush();
+  };
+  addEventListener('pagehide', flushSaves);
+  // pagehide is unreliable on mobile (tab switched away, then killed): flush on hide too
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushSaves();
   });
 
   // ── audio ──

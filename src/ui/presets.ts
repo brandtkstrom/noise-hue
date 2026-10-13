@@ -162,6 +162,8 @@ export function mountPresets(
 
   saveBtn.addEventListener('click', openEditor);
   input.addEventListener('keydown', (e) => {
+    // Enter/Escape while composing (IME) confirm or cancel the composition, not the editor
+    if (e.isComposing) return;
     if (e.key === 'Enter') {
       e.preventDefault();
       commitEditor();
