@@ -33,7 +33,7 @@ export function dbToY(db: number): number {
   return 80 - c * (72 / DB_RANGE);
 }
 
-const pt = (p: number[]) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`;
+const pt = (p: number[]) => `${(p[0] ?? 0).toFixed(1)} ${(p[1] ?? 0).toFixed(1)}`;
 const poly = (pts: number[][]) => pts.map((p, i) => (i ? 'L' : 'M') + pt(p)).join(' ');
 
 export function wavePath(samples: number[] | null): string {
@@ -72,12 +72,13 @@ export function measuredPaths(
   o: SoundOptions,
 ): { line: string; area: string } {
   const ideal = BANDS.map((b) => idealDb(info, b.f, o));
+  const level = (m: number) => bands[m] ?? 0;
   let offset = 0;
-  for (let m = 0; m < BANDS.length; m++) offset += ideal[m] - bands[m];
+  for (let m = 0; m < BANDS.length; m++) offset += (ideal[m] ?? 0) - level(m);
   offset /= BANDS.length;
-  const pts = BANDS.map((b, m) => [freqToX(b.f), dbToY(bands[m] + offset)]);
-  const x0 = (pts[0] ?? [0])[0] ?? 0;
-  const x1 = (pts[pts.length - 1] ?? [600])[0] ?? 600;
+  const pts = BANDS.map((b, m) => [freqToX(b.f), dbToY(level(m) + offset)]);
+  const x0 = pts[0]?.[0] ?? 0;
+  const x1 = pts[pts.length - 1]?.[0] ?? 600;
   return {
     line: poly(pts),
     area: `M${x0.toFixed(1)} 80 ` + pts.map((p) => 'L' + pt(p)).join(' ') + ` L${x1.toFixed(1)} 80 Z`,

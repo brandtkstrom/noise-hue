@@ -22,8 +22,8 @@ describe('waveform', () => {
   });
   it('has 28 bands', () => {
     expect(BANDS).toHaveLength(28);
-    expect(BANDS[0].lo).toBeCloseTo(40);
-    expect(BANDS[27].hi).toBeCloseTo(16000);
+    expect(BANDS[0]?.lo).toBeCloseTo(40, 6);
+    expect(BANDS[27]?.hi).toBeCloseTo(16000);
   });
   it('white ideal path is flat', () => {
     const d = idealPath(getNoise('white'), OPTION_DEFAULTS);
