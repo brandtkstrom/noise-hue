@@ -1,0 +1,1253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Noise Hue, docked</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0E1116}
+a{color:#9AA3AE}a:hover{color:#E9E7E2}
+@keyframes ringPulse{0%,100%{box-shadow:0 0 0 4px #1C232C,0 0 0 7px currentColor}50%{box-shadow:0 0 0 4px #1C232C,0 0 0 11px currentColor}}
+.layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:20px;align-items:start}
+.color-list{display:flex;flex-direction:column;gap:4px}
+@media (max-width:760px){.layout{grid-template-columns:minmax(0,1fr)}.color-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ring-pulse{animation:ringPulse 2.4s ease-in-out infinite}
+.ring-ripple::before,.ring-ripple::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid currentColor;opacity:0;pointer-events:none;animation:ringRipple 2.4s ease-out infinite}
+.ring-ripple::after{animation-delay:1.2s}
+@keyframes ringRipple{0%{transform:scale(1);opacity:.85}100%{transform:scale(1.3);opacity:0}}
+.ring-orbit::after{content:"";position:absolute;inset:-7px;border-radius:50%;pointer-events:none;background:conic-gradient(from 0deg,transparent 0 50%,currentColor 100%);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2.5px));animation:ringOrbit 3.6s linear infinite}
+@keyframes ringOrbit{to{transform:rotate(1turn)}}
+@media (prefers-reduced-motion: reduce){.ring-pulse,.ring-ripple::before,.ring-ripple::after,.ring-orbit::after{animation:none}}
+/* line the play button up with the first color circle (mirrors the color row's spacing) */
+.play-row{padding-left:max(0px,calc(13.85% - 42px));padding-right:max(0px,calc(13.85% - 42px))}
+@media (max-width:561px){.play-row{padding-left:max(0px,calc(25% - 67px));padding-right:max(0px,calc(25% - 67px))}}
+@media (max-width:373px){.play-row{padding-left:max(0px,calc(33.333% - 58.67px));padding-right:max(0px,calc(33.333% - 58.67px))}}
+button:focus-visible,input:focus-visible{outline:2px solid #E9E7E2;outline-offset:3px}
+.opts-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 32px;align-items:start}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+@media (max-width:560px){.opts-grid{grid-template-columns:minmax(0,1fr)}}
+.viz-btn:focus-visible{outline-offset:-4px;border-radius:12px}
+/* drifting blobs (Tweaks › Motion) */
+.blobs{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden;transition:opacity .8s ease}
+.blob{position:absolute;width:55vmax;height:55vmax;border-radius:50%;filter:blur(80px);will-change:transform;transition:background-color 1s ease;animation:blobA var(--d,24s) ease-in-out infinite alternate}
+.b1{left:-15%;top:-20%;opacity:.5}
+.b2{right:-20%;top:10%;opacity:.4;animation-name:blobB;animation-duration:calc(var(--d,24s) * 1.35)}
+.b3{left:20%;bottom:-30%;opacity:.45;animation-name:blobC;animation-duration:calc(var(--d,24s) * 0.85)}
+.b4{right:10%;bottom:-10%;width:35vmax;height:35vmax;opacity:.3;animation-duration:calc(var(--d,24s) * 1.7);animation-direction:alternate-reverse}
+@keyframes blobA{0%{transform:translate(0,0) scale(1)}50%{transform:translate(18vw,12vh) scale(1.25)}100%{transform:translate(-6vw,22vh) scale(.9)}}
+@keyframes blobB{0%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-22vw,8vh) scale(.85)}100%{transform:translate(-8vw,-14vh) scale(1.2)}}
+@keyframes blobC{0%{transform:translate(0,0) scale(.9)}50%{transform:translate(-14vw,-18vh) scale(1.15)}100%{transform:translate(16vw,-6vh) scale(1)}}
+@media (prefers-reduced-motion: reduce){.blob{animation:none}}
+.app{display:grid;grid-template-columns:var(--lw,300px) minmax(0,1fr) var(--rw,360px);height:100vh}
+.dock-left,.dock-right{height:100vh;overflow-y:auto}
+.opts-col{display:flex;flex-direction:column;gap:28px}
+.dock-bar{width:min(620px,100%);box-sizing:border-box}
+.app{transition:grid-template-columns .6s cubic-bezier(.4,0,.2,1)}
+.dock-left,.dock-right,.dock-bottom{transition:opacity .6s ease}
+.app.is-immersive{grid-template-columns:0px minmax(0,1fr) 0px}
+.is-immersive .dock-left,.is-immersive .dock-right,.is-immersive .dock-bottom{opacity:0;pointer-events:none;overflow:hidden}
+.exit-hint{animation:exitHint 3s ease forwards}
+@keyframes exitHint{0%,60%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){.app,.dock-left,.dock-right,.dock-bottom{transition:none}}
+@media (max-width:1000px){.app{grid-template-columns:minmax(0,1fr);height:auto}.dock-left,.dock-right{height:auto;overflow:visible;border:none!important}.dock-left .color-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.dock-bottom{position:sticky;bottom:0;z-index:2}.dock-center{padding:24px 20px 0!important}.slot{height:auto!important}.slot-right{order:3}.slot-left{order:2}.dock-center{order:1}.slot .rail{display:none!important}.slot.is-collapsed .pane{position:static;transform:none;opacity:1;visibility:visible;width:auto;box-shadow:none}.pin-btn{display:none!important}}
+@media (max-width:800px){.dock-left .color-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:500px){.dock-left .color-list{grid-template-columns:minmax(0,1fr)}}
+/* collapsible docked panes */
+.app{transition:grid-template-columns .35s cubic-bezier(.4,0,.2,1)}
+.slot{position:relative;height:100vh;min-width:0;transition:opacity .6s ease}
+.slot .rail{display:none}
+.slot.is-collapsed .rail{display:flex}
+.slot.is-collapsed .pane{position:absolute;top:0;bottom:0;z-index:20;box-shadow:0 0 48px rgba(0,0,0,.5);opacity:0;visibility:hidden;transition:transform .25s ease .15s,opacity .25s ease .15s,visibility 0s linear .4s}
+.slot-left.is-collapsed .pane{left:0;width:300px;transform:translateX(-100%)}
+.slot-right.is-collapsed .pane{right:0;width:360px;transform:translateX(100%)}
+.slot.is-collapsed:hover .pane,.slot.is-collapsed:focus-within .pane{transform:none;opacity:1;visibility:visible;transition-delay:0s}
+.is-immersive .slot{opacity:0;pointer-events:none;overflow:hidden}
+.rail-btn:hover{background:rgba(233,231,226,.06)}
+/* just unpinned: stay shut even though the pointer is still over it, until it leaves */
+.slot-left.is-collapsed.is-suppressed:hover .pane,.slot-left.is-collapsed.is-suppressed:focus-within .pane{transform:translateX(-100%);opacity:0;visibility:hidden;transition:transform .25s ease,opacity .25s ease,visibility 0s linear .25s}
+.slot-right.is-collapsed.is-suppressed:hover .pane,.slot-right.is-collapsed.is-suppressed:focus-within .pane{transform:translateX(100%);opacity:0;visibility:hidden;transition:transform .25s ease,opacity .25s ease,visibility 0s linear .25s}
+@media (prefers-reduced-motion: reduce){.slot.is-collapsed .pane{transition:none}}
+.fold-btn{display:none}
+.fold-btn:hover{background:rgba(233,231,226,.06)}
+/* narrow layout: panes always shown in the stack, whatever their pin state (must stay last) */
+@media (max-width:1000px){.slot .rail{display:none!important}.slot .pane,.slot.is-collapsed .pane,.slot.is-collapsed:hover .pane,.slot.is-collapsed.is-suppressed .pane,.slot.is-collapsed.is-suppressed:hover .pane,.slot.is-collapsed.is-suppressed:focus-within .pane{position:static!important;transform:none!important;opacity:1!important;visibility:visible!important;width:auto!important;box-shadow:none!important;transition:none!important}.fold-btn{display:flex}.slot.is-folded .fold-body{display:none!important}.slot.is-folded .pane{padding-bottom:12px!important}}
+
+.fold-hint{display:none}
+/* mobile layout: touch-sized type and controls; folded panels become compact full-width bars (keep last) */
+@media (max-width:1000px){
+.m-status{font-size:13px!important}.m-name{font-size:18px!important}.m-slope{font-size:13px!important}.m-desc{font-size:17px!important}
+.dock-bar{border-radius:28px!important;padding:12px 14px!important;gap:12px!important}
+.tp-play{width:64px!important;height:64px!important}.tp-play svg{width:28px;height:28px}
+.tp-mute{width:52px!important;height:52px!important}.tp-mute svg{width:26px;height:26px}
+.tp-fs,.tp-compare{width:56px!important;height:56px!important}.tp-fs svg,.tp-compare svg{width:26px;height:26px}
+.tp-vol{font-size:15px!important;width:60px!important}
+.app input[type=range]{height:52px!important}
+.opts-col label{font-size:16px!important}
+.opts-col span[style*="font-size: 13px"]{font-size:15px!important}
+.opts-col span[style*="font-size: 12px"]{font-size:14px!important}
+.pane-head{position:relative}.fold-btn::after{content:"";position:absolute;inset:0;border-radius:12px}.pane-head .reset-btn,.pane-head .pin-btn{position:relative;z-index:1}
+.pane-head:hover .fold-btn{background:rgba(233,231,226,.06)}
+.grp-title{font-size:17px!important}.panel-title{font-size:22px!important}
+.reset-btn{min-height:44px!important;font-size:14px!important}
+.fold-btn{min-height:52px!important;font-size:15px!important}
+.slot .pane{border-top:1px solid #232A33!important}
+.slot.is-folded .pane{padding:4px 12px!important;gap:0!important}
+.slot.is-folded .pane-head{margin:0!important;padding:0!important}
+.slot.is-folded .pane-title,.slot.is-folded .reset-btn{display:none!important}
+.slot.is-folded .fold-btn{flex:1 1 100%!important;justify-content:center!important;margin:0!important;min-height:60px!important}
+.slot.is-folded .fold-hint{display:inline;color:#9AA3AE}
+}
+.meta-fade{transition:opacity .6s ease}
+.is-immersive.is-audible .meta-fade{opacity:0;pointer-events:none}
+/* title and selected-color line are always hidden in fullscreen */
+.is-immersive .fs-hide{opacity:0;pointer-events:none}
+@media (prefers-reduced-motion: reduce){.meta-fade{transition:none}}
+/* title dot: replays when the selected color changes (a/b twins restart the animation) */
+@keyframes dot_pop_a{0%{transform:scale(1)}35%{transform:scale(1.9)}60%{transform:scale(.85)}80%{transform:scale(1.1)}100%{transform:scale(1)}}
+.dot-pop-a{animation:dot_pop_a .55s cubic-bezier(.3,.7,.4,1)}
+@keyframes dot_pop_b{0%{transform:scale(1)}35%{transform:scale(1.9)}60%{transform:scale(.85)}80%{transform:scale(1.1)}100%{transform:scale(1)}}
+.dot-pop-b{animation:dot_pop_b .55s cubic-bezier(.3,.7,.4,1)}
+@keyframes dot_bounce_a{0%{transform:translateY(0)}30%{transform:translateY(-14px) scale(.9,1.1)}55%{transform:translateY(0) scale(1.25,.75)}72%{transform:translateY(-4px)}86%{transform:translateY(0) scale(1.06,.94)}100%{transform:translateY(0)}}
+.dot-bounce-a{animation:dot_bounce_a .7s ease-out}
+@keyframes dot_bounce_b{0%{transform:translateY(0)}30%{transform:translateY(-14px) scale(.9,1.1)}55%{transform:translateY(0) scale(1.25,.75)}72%{transform:translateY(-4px)}86%{transform:translateY(0) scale(1.06,.94)}100%{transform:translateY(0)}}
+.dot-bounce-b{animation:dot_bounce_b .7s ease-out}
+@keyframes dot_ripple_a{0%{box-shadow:0 0 0 0 currentColor}100%{box-shadow:0 0 0 14px rgba(0,0,0,0)}}
+.dot-ripple-a{animation:dot_ripple_a .8s ease-out}
+@keyframes dot_ripple_b{0%{box-shadow:0 0 0 0 currentColor}100%{box-shadow:0 0 0 14px rgba(0,0,0,0)}}
+.dot-ripple-b{animation:dot_ripple_b .8s ease-out}
+@keyframes dot_flip_a{0%{transform:perspective(60px) rotateY(0)}100%{transform:perspective(60px) rotateY(360deg)}}
+.dot-flip-a{animation:dot_flip_a .6s cubic-bezier(.4,0,.2,1)}
+@keyframes dot_flip_b{0%{transform:perspective(60px) rotateY(0)}100%{transform:perspective(60px) rotateY(360deg)}}
+.dot-flip-b{animation:dot_flip_b .6s cubic-bezier(.4,0,.2,1)}
+@keyframes dot_jelly_a{0%{transform:scale(1,1)}20%{transform:scale(1.5,.6)}40%{transform:scale(.7,1.4)}60%{transform:scale(1.2,.85)}80%{transform:scale(.92,1.06)}100%{transform:scale(1,1)}}
+.dot-jelly-a{animation:dot_jelly_a .75s ease-out}
+@keyframes dot_jelly_b{0%{transform:scale(1,1)}20%{transform:scale(1.5,.6)}40%{transform:scale(.7,1.4)}60%{transform:scale(1.2,.85)}80%{transform:scale(.92,1.06)}100%{transform:scale(1,1)}}
+.dot-jelly-b{animation:dot_jelly_b .75s ease-out}
+@keyframes dot_glow_a{0%{box-shadow:0 0 0 0 currentColor,0 0 0 0 currentColor}35%{box-shadow:0 0 10px 4px currentColor,0 0 22px 8px currentColor}100%{box-shadow:0 0 0 0 rgba(0,0,0,0),0 0 0 0 rgba(0,0,0,0)}}
+.dot-glow-a{animation:dot_glow_a .9s ease-out}
+@keyframes dot_glow_b{0%{box-shadow:0 0 0 0 currentColor,0 0 0 0 currentColor}35%{box-shadow:0 0 10px 4px currentColor,0 0 22px 8px currentColor}100%{box-shadow:0 0 0 0 rgba(0,0,0,0),0 0 0 0 rgba(0,0,0,0)}}
+.dot-glow-b{animation:dot_glow_b .9s ease-out}
+@media (prefers-reduced-motion: reduce){[class^="dot-"]{animation:none!important}}
+/* color buttons: thin border in the button's own color on hover (inset shadow, so nothing shifts) */
+.color-btn:hover{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--c) 70%,transparent)}
+@media (hover:none){.color-btn:hover{box-shadow:none}}
+/* hide the color description while the color panel is collapsed */
+.app.left-collapsed .m-desc{display:none!important}
+@media (max-width:1000px){.app.left-collapsed .m-desc{display:block!important}.app.left-folded .m-desc{display:none!important}}
+.app.desc-peek .m-desc,.app.desc-peek.left-collapsed .m-desc,.app.desc-peek.left-folded .m-desc{display:block!important}
+/* mirrors the selected color's ripple: dark gap + solid ring in the noise color, with rings rippling out from its edge */
+.tp-play{transition:background-color .3s,box-shadow .3s cubic-bezier(.2,.8,.2,1)!important}
+.play-ripple{box-shadow:0 0 0 4px #151A21,0 0 0 7px var(--rc)}
+.play-ripple::before,.play-ripple::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--rc);opacity:0;pointer-events:none;animation:ringRipple 2.4s ease-out infinite}
+.play-ripple::after{animation-delay:1.2s}
+@media (prefers-reduced-motion: reduce){.play-ripple::before,.play-ripple::after{animation:none}}
+</style>
+</helmet>
+<div class="app {{immersiveClass}} {{paneStateClass}}" style="--lw: {{leftW}}; --rw: {{rightW}}; min-height: 100vh; box-sizing: border-box; background: {{pageBg}}; color: #E9E7E2; font-family: 'Instrument Sans', system-ui, sans-serif; position: relative; overflow: hidden; isolation: isolate">
+<sc-if value="{{blobsOn}}" hint-placeholder-val="{{ false }}">
+<div class="blobs" style="--d: {{blobDur}}; opacity: {{blobOpacity}}" aria-hidden="true">
+<span class="blob b1" style="background-color: {{accent}}"></span>
+<span class="blob b2" style="background-color: {{accent}}"></span>
+<span class="blob b3" style="background-color: {{accent}}"></span>
+<span class="blob b4" style="background-color: {{accent}}"></span>
+</div>
+</sc-if>
+<div class="slot slot-left {{slotLeftClass}}" onMouseLeave="{{releaseLeft}}">
+<button type="button" class="rail rail-btn" aria-label="Show color panel" style="position: absolute; top: 0; bottom: 0; left: 0; width: 48px; box-sizing: border-box; flex-direction: column; align-items: center; gap: 14px; padding: 20px 0; border: none; border-right: 1px solid #232A33; background: rgba(21,26,33,0.92); color: #C4CAD2; cursor: pointer; font-family: inherit"><span style="width: 22px; height: 22px; border-radius: 50%; background: {{accent}}; flex: none; transition: background-color 0.4s" aria-hidden="true"></span><span style="writing-mode: vertical-rl; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #9AA3AE">Color</span></button>
+<aside class="dock-left pane" style="box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 24px 14px; background: rgba(21,26,33,0.92); border-right: 1px solid #232A33" aria-label="Noise type">
+<div class="pane-head" style="display: flex; align-items: center; justify-content: space-between; margin: -6px 0 4px 8px"><p class="pane-title" style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #9AA3AE">Color</p><button type="button" class="fold-btn" onClick="{{toggleFoldLeft}}" aria-expanded="{{foldExpandedLeft}}" aria-controls="color-fold" aria-label="{{foldLabelLeft}}" style="flex: 1 1 auto; min-height: 44px; align-items: center; justify-content: flex-end; gap: 10px; padding: 0 6px 0 12px; border: none; border-radius: 12px; background: transparent; color: #C4CAD2; font-family: inherit; font-size: 13px; cursor: pointer; touch-action: manipulation"><span style="width: 12px; height: 12px; border-radius: 50%; background: {{accent}}; flex: none" aria-hidden="true"></span><span>{{current.name}}</span><span class="fold-hint">· Show colors</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; transform: rotate({{foldRotLeft}}); transition: transform 0.25s"><path d="m6 9 6 6 6-6"></path></svg></button><button type="button" class="pin-btn" onClick="{{togglePinLeft}}" aria-pressed="{{pinnedLeft}}" aria-label="{{pinLabelLeft}}" title="{{pinLabelLeft}}" style="flex: none; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border: none; border-radius: 10px; background: {{pinBgLeft}}; color: {{pinColorLeft}}; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="{{pinFillLeft}}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"></path><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"></path></svg></button></div>
+<div class="color-list fold-body" id="color-fold" role="group" aria-label="Noise color">
+<sc-for list="{{types}}" as="t" hint-placeholder-count="8">
+<button type="button" class="color-btn" onClick="{{t.pick}}" onMouseEnter="{{t.peek}}" onMouseLeave="{{t.unpeek}}" onFocus="{{t.peek}}" onBlur="{{t.unpeek}}" aria-pressed="{{t.pressed}}" aria-label="{{t.ariaLabel}}" style="--c: {{t.color}}; width: 100%; min-height: 72px; box-sizing: border-box; display: flex; align-items: center; gap: 16px; padding: 12px 14px; border: none; border-radius: 18px; background: {{t.rowBg}}; color: {{t.labelColor}}; font-family: inherit; text-align: left; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: background 0.2s, box-shadow 0.2s">
+<span class="{{t.ringClass}}" style="position: relative; width: 48px; height: 48px; border-radius: 50%; background: {{t.color}}; color: {{t.color}}; box-shadow: {{t.ring}}; transition: box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); flex: none" aria-hidden="true">
+<sc-if value="{{t.warpOn}}" hint-placeholder-val="{{ false }}">
+<svg width="76" height="76" viewBox="0 0 76 76" style="position: absolute; left: -14px; top: -14px; overflow: visible; pointer-events: none" aria-hidden="true"><path d="{{t.warpPath}}" fill="none" stroke="{{t.color}}" stroke-width="3" stroke-linejoin="round"></path></svg>
+</sc-if>
+</span>
+<span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+<span style="font-size: 17px; font-weight: {{t.labelWeight}}">{{t.name}}</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AA3AE; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{t.slope}}</span>
+</span>
+</button>
+</sc-for>
+</div>
+</aside>
+</div>
+
+<sc-if value="{{immersive}}" hint-placeholder-val="{{ false }}">
+<button type="button" id="exit-immersive" onClick="{{exitImmersive}}" onKeyDown="{{immersiveKey}}" aria-label="Exit fullscreen" style="position: fixed; inset: 0; z-index: 50; width: 100%; height: 100%; padding: 0; border: none; background: transparent; cursor: pointer; outline: none">
+<span class="exit-hint" style="position: absolute; top: 24px; left: 50%; transform: translateX(-50%); padding: 8px 16px; border-radius: 999px; background: rgba(14,17,22,0.75); border: 1px solid #2A323D; color: #C4CAD2; font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.04em; white-space: nowrap">Click or press any key to exit</span>
+</button>
+</sc-if>
+<main class="dock-center" style="box-sizing: border-box; min-width: 0; display: flex; flex-direction: column; gap: 24px; padding: 28px 40px 0">
+<header class="meta-fade fs-hide" style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap">
+<h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.02em">noise<span class="sr-only"> </span><span class="{{dotAnimClass}}" style="display: inline-block; width: 9px; height: 9px; margin: 0 7px; border-radius: 50%; vertical-align: 0.12em; background-color: {{accent}}; color: {{accent}}; transition: background-color 0.4s ease" aria-hidden="true"></span>hue</h1>
+
+</header>
+<div class="meta-fade fs-hide" style="display: flex; padding: 0; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap">
+<div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap">
+<span class="m-name" style="font-size: 15px; font-weight: 500">{{current.name}} noise</span>
+<span class="m-slope" style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AA3AE">{{current.slope}}</span>
+</div>
+</div>
+<div style="position: relative; height: 280px; background: {{vizBandBg}}; border-bottom: 1px solid {{vizBandLine}}; border-top: 1px solid {{vizBandLine}}; border-radius: 16px; margin-top: 32px; box-sizing: border-box">
+<button type="button" class="viz-btn" onClick="{{toggleCompare}}" aria-pressed="{{comparePressed}}" aria-label="Compare to white noise" style="position: relative; inset: 0; z-index: 1; width: 100%; height: 100%; padding: 0; border: none; background: transparent; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent"></button>
+<svg viewBox="0 0 600 160" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; opacity: {{waveSvgOpacity}}; transition: opacity 0.6s ease; pointer-events: none" role="img" aria-label="{{waveLabel}}">
+<line x1="0" y1="80" x2="600" y2="80" stroke="#2A323D" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+<path d="{{wavePath}}" fill="none" stroke="{{accent}}" stroke-opacity="{{waveOpacity}}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>
+</svg>
+<sc-if value="{{compare}}" hint-placeholder-val="{{ false }}">
+<svg viewBox="0 0 600 160" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; pointer-events: none" aria-hidden="true">
+<path d="{{deltaArea}}" fill="{{accent}}" fill-opacity="0.16" stroke="none"></path>
+<line x1="0" y1="80" x2="600" y2="80" stroke="#E8E6E3" stroke-opacity="0.55" stroke-width="1.5" vector-effect="non-scaling-stroke"></line>
+<path d="{{idealPath}}" fill="none" stroke="{{accent}}" stroke-width="1.5" stroke-dasharray="6 6" vector-effect="non-scaling-stroke"></path>
+<path d="{{measuredPath}}" fill="none" stroke="{{accent}}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></path>
+</svg>
+<div style="position: absolute; left: 20px; right: 20px; bottom: 12px; display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #9AA3AE" aria-hidden="true">
+<span>20 Hz</span>
+<span>1 kHz</span>
+<span>20 kHz</span>
+</div>
+<p style="position: absolute; left: 20px; top: 14px; margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 1.6; color: #9AA3AE; white-space: pre-line">{{compareNote}}</p>
+</sc-if>
+</div>
+<div style="box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; width: 100%; flex: 1 0 100px"><p class="m-desc meta-fade" style="border-radius: 14px; background: rgba(14,17,22,0.6); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); font-size: 16px; line-height: 1.5; color: #C4CAD2; text-align: center; font-style: italic; display: inline-flex; width: 100%; justify-content: center; padding: 20px; box-sizing: border-box">{{descText}}</p></div><div class="dock-bottom" style="display: flex; flex-direction: column; align-items: center; width: 100%; margin-top: auto; gap: 32px; padding-bottom: 32px; margin-bottom: 10%">
+<div class="dock-bar" style="display: inline-flex; border-radius: 999px; background: rgba(21,26,33,0.82); border: 1px solid #232A33; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 12px 40px rgba(0,0,0,0.35); gap: 12px 16px; padding: 20px 24px; align-items: center; width: min(480px,100%)" role="group" aria-label="Playback controls">
+<button type="button" class="tp-play {{playRippleClass}}" onClick="{{toggle}}" aria-label="{{playLabel}}" title="{{playLabel}}" style="--rc: {{accent}}; position: relative; flex: none; width: 52px; height: 52px; padding: 0; display: flex; align-items: center; justify-content: center; border: none; border-radius: 50%; background: {{accent}}; color: #0E1116; cursor: pointer; touch-action: manipulation; transition: background-color 0.3s">
+<sc-if value="{{paused}}" hint-placeholder-val="{{ true }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"></path></svg></sc-if>
+<sc-if value="{{playing}}" hint-placeholder-val="{{ false }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg></sc-if>
+</button>
+
+<p class="m-status" style="font-family: 'IBM Plex Mono', monospace; font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase; color: {{statusColor}}; transition: color 0.3s; margin-left: 12px; display: inline; width: 100%; text-align: center" aria-live="polite">{{statusText}}</p><div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+
+<button type="button" class="tp-compare" onClick="{{toggleCompare}}" aria-pressed="{{comparePressed}}" aria-label="Compare to white noise" title="Compare to white noise" style="flex: none; width: 52px; height: 52px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; touch-action: manipulation; transition: background 0.2s, border-color 0.2s, color 0.2s; border: 1px solid {{compareBorder}}; background: {{compareBg}}; color: {{compareIconColor}}">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18" stroke-opacity="0.5"></path><path d="M3 19 21 5"></path></svg>
+</button>
+<button type="button" class="tp-fs" onClick="{{enterImmersive}}" aria-label="Fullscreen" title="Fullscreen" style="flex: none; width: 52px; height: 52px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; touch-action: manipulation; transition: background 0.2s, border-color 0.2s, color 0.2s; border: 1px solid #2A323D; background: rgba(14,17,22,0.6); color: #E9E7E2">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"></path><path d="M21 8V5a2 2 0 0 0-2-2h-3"></path><path d="M3 16v3a2 2 0 0 0 2 2h3"></path><path d="M16 21h3a2 2 0 0 0 2-2v-3"></path></svg>
+</button>
+</div>
+</div><div style="min-width: 0; max-width: 580px; display: inline-flex; align-items: center; width: 100%; justify-content: center">
+<button type="button" class="tp-mute" onClick="{{toggleMute}}" aria-pressed="{{mutedPressed}}" aria-label="{{muteLabel}}" title="{{muteLabel}}" style="flex: none; width: 46px; height: 46px; padding: 0; display: flex; align-items: center; justify-content: center; border: none; border-radius: 50%; background: {{muteBg}}; color: {{muteColor}}; cursor: pointer; touch-action: manipulation; transition: background 0.2s, color 0.2s"><sc-if value="{{volIconMuted}}" hint-placeholder-val="{{ false }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z"></path><path d="m16 9 6 6"></path><path d="m22 9-6 6"></path></svg></sc-if><sc-if value="{{volIconLow}}" hint-placeholder-val="{{ false }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path></svg></sc-if><sc-if value="{{volIconHigh}}" hint-placeholder-val="{{ true }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path></svg></sc-if></button>
+<label for="vol" class="sr-only">Volume</label>
+<input id="vol" type="range" min="0" max="100" step="1" value="{{volume}}" onChange="{{setVolume}}" aria-valuetext="{{volumeText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer;">
+<span style="width: 46px; flex: none; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #C4CAD2; margin-left: 6px" class="tp-vol" aria-hidden="true">{{volumeShort}}</span>
+</div>
+</div>
+
+</main><div class="slot slot-right {{slotRightClass}}" onMouseLeave="{{releaseRight}}">
+<button type="button" class="rail rail-btn" aria-label="Show sound panel" style="position: absolute; top: 0; bottom: 0; right: 0; width: 48px; box-sizing: border-box; flex-direction: column; align-items: center; gap: 14px; padding: 20px 0; border: none; border-left: 1px solid #232A33; background: rgba(21,26,33,0.92); color: #C4CAD2; cursor: pointer; font-family: inherit"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"></path><circle cx="16" cy="6" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg><span style="writing-mode: vertical-rl; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #9AA3AE">Sound</span></button>
+<section class="dock-right pane" style="box-sizing: border-box; min-width: 0; display: flex; flex-direction: column; padding: 20px 0 24px; background: rgba(21,26,33,0.92); border-left: 1px solid #232A33" aria-label="Sound options">
+<div class="pane-head" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 16px; margin-top: -6px"><div class="pane-title" style="display: flex; align-items: center; gap: 4px; margin-left: -6px"><button type="button" class="pin-btn" onClick="{{togglePinRight}}" aria-pressed="{{pinnedRight}}" aria-label="{{pinLabelRight}}" title="{{pinLabelRight}}" style="flex: none; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border: none; border-radius: 10px; background: {{pinBgRight}}; color: {{pinColorRight}}; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="{{pinFillRight}}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"></path><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"></path></svg></button><p class="panel-title" style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.015em; color: #E9E7E2">Sound</p></div><button type="button" class="reset-btn" onClick="{{resetAll}}" title="Reset volume and sound options" style="margin-left: auto; min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid #3A4350; background: transparent; color: #E9E7E2; font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; flex: none; touch-action: manipulation"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg><span>Reset</span></button><button type="button" class="fold-btn" onClick="{{toggleFoldRight}}" aria-expanded="{{foldExpandedRight}}" aria-controls="sound-fold" aria-label="{{foldLabelRight}}" style="flex: none; margin-left: 4px; min-height: 44px; align-items: center; justify-content: flex-end; gap: 10px; padding: 0 6px 0 12px; border: none; border-radius: 12px; background: transparent; color: #C4CAD2; font-family: inherit; font-size: 13px; cursor: pointer; touch-action: manipulation"><span class="fold-hint">Show sound options ·</span><span>{{soundFoldSummary}}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; transform: rotate({{foldRotRight}}); transition: transform 0.25s"><path d="m6 9 6 6 6-6"></path></svg></button></div>
+<div class="opts-col fold-body" id="sound-fold" style="padding: 8px 24px 4px">
+<sc-if value="{{hasColorOpts}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 14px; min-width: 0" role="group" aria-label="{{colorOptsTitle}}">
+<p class="grp-title" style="margin: 0 0 -2px; padding-bottom: 8px; border-bottom: 1px solid #232A33; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; letter-spacing: -0.005em; color: #E9E7E2"><span>{{colorOptsTitle}}</span><sc-if value="{{charChanged}}" hint-placeholder-val="{{ false }}"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{accent}}" title="Changed from default"></span><span class="sr-only">(changed)</span></sc-if></p>
+<sc-if value="{{isBrown}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="browncorner" style="font-size: 14px; font-weight: 500">Depth</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{brownCornerText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Deeper</span>
+<input id="browncorner" onDoubleClick="{{dbl.brownCorner}}" type="range" min="0" max="100" step="1" value="{{brownCornerPos}}" onChange="{{setBrownCorner}}" aria-valuetext="{{brownCornerText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Lighter</span>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{isGreen}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="greencenter" style="font-size: 14px; font-weight: 500">Center</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{greenCenterText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Low</span>
+<input id="greencenter" onDoubleClick="{{dbl.greenCenter}}" type="range" min="0" max="100" step="1" value="{{greenCenterPos}}" onChange="{{setGreenCenter}}" aria-valuetext="{{greenCenterText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">High</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="greenwidth" style="font-size: 14px; font-weight: 500">Width</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{greenWidthText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Narrow</span>
+<input id="greenwidth" onDoubleClick="{{dbl.greenWidth}}" type="range" min="10" max="30" step="1" value="{{greenWidthPos}}" onChange="{{setGreenWidth}}" aria-valuetext="{{greenWidthText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Wide</span>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{isGrey}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="greystrength" style="font-size: 14px; font-weight: 500">Hearing adjustment</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{greyStrengthText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<input id="greystrength" onDoubleClick="{{dbl.greyStrength}}" type="range" min="0" max="100" step="1" value="{{greyStrength}}" onChange="{{setGreyStrength}}" aria-valuetext="{{greyStrengthText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer">
+</div>
+</div>
+</sc-if>
+<sc-if value="{{isOrange}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="orangeq" style="font-size: 14px; font-weight: 500">Gap width</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{orangeQText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Wide</span>
+<input id="orangeq" onDoubleClick="{{dbl.orangeQ}}" type="range" min="5" max="60" step="1" value="{{orangeQ}}" onChange="{{setOrangeQ}}" aria-valuetext="{{orangeQText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Narrow</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="orangetune" style="font-size: 14px; font-weight: 500">Tuning</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{orangeTuneText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Lower</span>
+<input id="orangetune" onDoubleClick="{{dbl.orangeTune}}" type="range" min="415" max="466" step="1" value="{{orangeTune}}" onChange="{{setOrangeTune}}" aria-valuetext="{{orangeTuneText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Higher</span>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<div style="display: flex; flex-direction: column; gap: 14px; min-width: 0" role="group" aria-label="Tone">
+<p class="grp-title" style="margin: 0 0 -2px; padding-bottom: 8px; border-bottom: 1px solid #232A33; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; letter-spacing: -0.005em; color: #E9E7E2"><span>Tone</span><sc-if value="{{toneChanged}}" hint-placeholder-val="{{ false }}"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{accent}}" title="Changed from default"></span><span class="sr-only">(changed)</span></sc-if></p>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="tilt" style="font-size: 14px; font-weight: 500">Tilt</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{tiltText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Warm</span>
+<input id="tilt" type="range" min="-12" max="12" step="1" value="{{tilt}}" onDoubleClick="{{dbl.tilt}}" onChange="{{setTilt}}" aria-valuetext="{{tiltText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Bright</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="lowcut" style="font-size: 14px; font-weight: 500">Low cut</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{lowCutText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Off</span><input id="lowcut" type="range" min="0" max="100" step="1" value="{{lowCutPos}}" onDoubleClick="{{dbl.lowCut}}" onChange="{{setLowCut}}" aria-valuetext="{{lowCutText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer"><span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">More</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="highcut" style="font-size: 14px; font-weight: 500">High cut</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{highCutText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">More</span><input id="highcut" type="range" min="0" max="100" step="1" value="{{highCutPos}}" onDoubleClick="{{dbl.highCut}}" onChange="{{setHighCut}}" aria-valuetext="{{highCutText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer"><span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Off</span>
+</div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 14px; min-width: 0" role="group" aria-label="Space">
+<p class="grp-title" style="margin: 0 0 -2px; padding-bottom: 8px; border-bottom: 1px solid #232A33; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; letter-spacing: -0.005em; color: #E9E7E2"><span>Space</span><sc-if value="{{spaceChanged}}" hint-placeholder-val="{{ false }}"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{accent}}" title="Changed from default"></span><span class="sr-only">(changed)</span></sc-if></p>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="pan" style="font-size: 14px; font-weight: 500">Panning</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{panText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="display: flex; align-items: center; gap: 4px; flex: none; font-size: 13px; font-weight: 600; color: #C4CAD2" aria-hidden="true"><span style="font-size: 24px; display: inline-block; transform: scaleX(-1)"><br></span>L</span>
+<input id="pan" type="range" min="-100" max="100" step="1" value="{{pan}}" onChange="{{setPan}}" onDoubleClick="{{centerPan}}" aria-valuetext="{{panText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer">
+<span style="display: flex; align-items: center; gap: 4px; flex: none; font-size: 13px; font-weight: 600; color: #C4CAD2" aria-hidden="true">R<span style="font-size: 24px"><br></span></span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="width" style="font-size: 14px; font-weight: 500">Stereo width</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{widthText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Mono</span>
+<input id="width" type="range" min="0" max="100" step="1" value="{{width}}" onDoubleClick="{{dbl.width}}" onChange="{{setWidth}}" aria-valuetext="{{widthText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Wide</span>
+</div>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 14px; min-width: 0" role="group" aria-label="Waves">
+<p class="grp-title" style="margin: 0 0 -2px; padding-bottom: 8px; border-bottom: 1px solid #232A33; display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; letter-spacing: -0.005em; color: #E9E7E2"><span>Waves</span><sc-if value="{{wavesChanged}}" hint-placeholder-val="{{ false }}"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{accent}}" title="Changed from default"></span><span class="sr-only">(changed)</span></sc-if></p>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="wavedepth" style="font-size: 14px; font-weight: 500">Wave depth</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{waveDepthText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Off</span><input id="wavedepth" type="range" min="0" max="100" step="1" value="{{waveDepth}}" onDoubleClick="{{dbl.waveDepth}}" onChange="{{setWaveDepth}}" aria-valuetext="{{waveDepthText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer"><span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Deep</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px; opacity: {{wavePeriodOpacity}}; transition: opacity 0.2s">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="waveperiod" style="font-size: 14px; font-weight: 500">Wave length</label>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #C4CAD2">{{wavePeriodText}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Fast</span>
+<input id="waveperiod" type="range" min="4" max="20" step="1" value="{{wavePeriod}}" onDoubleClick="{{dbl.wavePeriod}}" onChange="{{setWavePeriod}}" aria-valuetext="{{wavePeriodText}}" style="flex: 1; min-width: 0; height: 44px; accent-color: {{accent}}; cursor: pointer">
+<span style="flex: none; font-size: 12px; font-weight: 600; color: #9AA3AE" aria-hidden="true">Slow</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startType&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;white&quot;,&quot;pink&quot;,&quot;brown&quot;,&quot;blue&quot;,&quot;violet&quot;,&quot;grey&quot;,&quot;green&quot;,&quot;orange&quot;],&quot;default&quot;:&quot;white&quot;},&quot;bgCurve&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;linear&quot;,&quot;squared&quot;,&quot;log&quot;,&quot;scurve&quot;,&quot;live&quot;],&quot;default&quot;:&quot;squared&quot;,&quot;section&quot;:&quot;Background&quot;},&quot;bgBlend&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;srgb&quot;,&quot;oklab&quot;],&quot;default&quot;:&quot;srgb&quot;,&quot;section&quot;:&quot;Background&quot;},&quot;bgEase&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Background&quot;},&quot;bgShape&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;band&quot;,&quot;mirror&quot;,&quot;glow&quot;],&quot;default&quot;:&quot;glow&quot;,&quot;section&quot;:&quot;Background&quot;},&quot;bgOpacity&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:5,&quot;unit&quot;:&quot;%&quot;,&quot;default&quot;:20,&quot;section&quot;:&quot;Background&quot;},&quot;bgMinHeight&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:5,&quot;unit&quot;:&quot;%&quot;,&quot;default&quot;:0,&quot;section&quot;:&quot;Background&quot;},&quot;bgMaxHeight&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:5,&quot;unit&quot;:&quot;%&quot;,&quot;default&quot;:50,&quot;section&quot;:&quot;Background&quot;},&quot;bgCenter&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:5,&quot;unit&quot;:&quot;%&quot;,&quot;default&quot;:10,&quot;section&quot;:&quot;Background&quot;},&quot;bgMotion&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;off&quot;,&quot;blobs&quot;,&quot;waves&quot;,&quot;both&quot;],&quot;default&quot;:&quot;waves&quot;,&quot;section&quot;:&quot;Motion&quot;},&quot;motionSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0.25,&quot;max&quot;:3,&quot;step&quot;:0.25,&quot;unit&quot;:&quot;×&quot;,&quot;default&quot;:1,&quot;section&quot;:&quot;Motion&quot;},&quot;motionIntensity&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:100,&quot;step&quot;:5,&quot;unit&quot;:&quot;%&quot;,&quot;default&quot;:50,&quot;section&quot;:&quot;Motion&quot;},&quot;motionSync&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Motion&quot;},&quot;ringAnim&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;pulse&quot;,&quot;warp&quot;,&quot;ripple&quot;,&quot;orbit&quot;,&quot;none&quot;],&quot;default&quot;:&quot;ripple&quot;,&quot;section&quot;:&quot;Color ring&quot;},&quot;ringWaves&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:1,&quot;max&quot;:12,&quot;step&quot;:1,&quot;default&quot;:3,&quot;section&quot;:&quot;Color ring&quot;},&quot;dotAnim&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;pop&quot;,&quot;bounce&quot;,&quot;ripple&quot;,&quot;flip&quot;,&quot;jelly&quot;,&quot;glow&quot;,&quot;none&quot;],&quot;default&quot;:&quot;bounce&quot;,&quot;section&quot;:&quot;Title dot&quot;},&quot;volCurve&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;db&quot;,&quot;cubed&quot;,&quot;squared&quot;],&quot;default&quot;:&quot;db&quot;,&quot;section&quot;:&quot;Volume&quot;},&quot;vizWidth&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;card&quot;,&quot;full&quot;],&quot;default&quot;:&quot;card&quot;,&quot;section&quot;:&quot;Visualization&quot;},&quot;vizHideIdle&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;Visualization&quot;},&quot;vizBacking&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;section&quot;:&quot;Visualization&quot;},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+var NOISE_TYPES = [
+  { id: 'white', tilt: 0, name: 'White', color: '#E8E6E3', slope: 'flat · 0 dB/oct', desc: 'Equal energy at every frequency. Bright and hissy, like TV static — good for masking voices.' },
+  { id: 'grey', tilt: 0, base: 'white', name: 'Grey', color: '#A7AFB9', slope: 'flat to the ear', desc: 'Tuned to human hearing so every pitch sounds equally loud. Smooth and even — less hissy than white.' },
+  { id: 'brown', tilt: -6, name: 'Brown', color: '#C49468', slope: '−6 dB/oct', desc: 'Deep and rumbling, almost no hiss. Like a distant waterfall or an airplane cabin.' },
+  { id: 'pink', tilt: -3, name: 'Pink', color: '#F2A7C3', slope: '−3 dB/oct', desc: 'Softer highs, balanced to the ear. Like steady rain or wind through leaves.' },
+  { id: 'green', tilt: -3, base: 'pink', name: 'Green', color: '#8CC79A', slope: 'mid band · ~500 Hz', desc: 'Centered on the middle frequencies, with softer bass and treble. Like a forest breeze or a gentle stream.' },
+  { id: 'blue', tilt: 3, name: 'Blue', color: '#7FB2F0', slope: '+3 dB/oct', desc: 'Tilted toward the treble. Crisp and airy, like a fine spray of water.' },
+  { id: 'violet', tilt: 6, name: 'Violet', color: '#B49CF2', slope: '+6 dB/oct', desc: 'Mostly high frequencies. Sharp and thin — sometimes used to soothe tinnitus.' },
+  { id: 'orange', tilt: -3, base: 'pink', name: 'Orange', color: '#F0A35E', slope: '−3 dB/oct · note gaps', desc: 'Pink noise with narrow gaps at every musical note. Unusual and slightly tonal.' }
+];
+
+function filterChain(id, o) {
+  o = o || OPTION_DEFAULTS;
+  if (id === 'grey') {
+    var g = o.greyStrength / 100;
+    return [['lowshelf', 250, 0.7, 14 * g], ['peaking', 3000, 1, -6 * g], ['highshelf', 9000, 0.7, 5 * g]];
+  }
+  if (id === 'green') {
+    var spread = Math.pow(2, o.greenWidth);
+    return [['highpass', o.greenCenter / spread, 0.707, 0], ['lowpass', Math.min(20000, o.greenCenter * spread), 0.707, 0], ['peaking', o.greenCenter, 0.7, 4]];
+  }
+  if (id === 'orange') {
+    var out = [];
+    for (var n = -33; n <= 38; n++) out.push(['notch', o.orangeTune * Math.pow(2, n / 12), o.orangeQ, 0]);
+    return out;
+  }
+  return null;
+}
+var COLOR_OPTION_KEYS = { brownCorner: 'brown', greenCenter: 'green', greenWidth: 'green', greyStrength: 'grey', orangeQ: 'orange', orangeTune: 'orange' };
+function colorSignature(id, o) {
+  var sig = [];
+  Object.keys(COLOR_OPTION_KEYS).forEach(function (k) { if (COLOR_OPTION_KEYS[k] === id) sig.push(o[k]); });
+  return id + '|' + sig.join(',');
+}
+
+function biquad(spec, sr) {
+  var type = spec[0], f0 = spec[1], Q = spec[2], A = Math.pow(10, spec[3] / 40);
+  var w = 2 * Math.PI * f0 / sr, cw = Math.cos(w), sw = Math.sin(w), al = sw / (2 * Q), sA = 2 * Math.sqrt(A) * al;
+  var b0, b1, b2, a0, a1, a2;
+  if (type === 'lowpass') { b0 = (1 - cw) / 2; b1 = 1 - cw; b2 = b0; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; }
+  else if (type === 'highpass') { b0 = (1 + cw) / 2; b1 = -(1 + cw); b2 = b0; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; }
+  else if (type === 'notch') { b0 = 1; b1 = -2 * cw; b2 = 1; a0 = 1 + al; a1 = -2 * cw; a2 = 1 - al; }
+  else if (type === 'peaking') { b0 = 1 + al * A; b1 = -2 * cw; b2 = 1 - al * A; a0 = 1 + al / A; a1 = -2 * cw; a2 = 1 - al / A; }
+  else if (type === 'lowshelf') {
+    b0 = A * ((A + 1) - (A - 1) * cw + sA); b1 = 2 * A * ((A - 1) - (A + 1) * cw); b2 = A * ((A + 1) - (A - 1) * cw - sA);
+    a0 = (A + 1) + (A - 1) * cw + sA; a1 = -2 * ((A - 1) + (A + 1) * cw); a2 = (A + 1) + (A - 1) * cw - sA;
+  } else {
+    b0 = A * ((A + 1) + (A - 1) * cw + sA); b1 = -2 * A * ((A - 1) + (A + 1) * cw); b2 = A * ((A + 1) + (A - 1) * cw - sA);
+    a0 = (A + 1) - (A - 1) * cw + sA; a1 = 2 * ((A - 1) - (A + 1) * cw); a2 = (A + 1) - (A - 1) * cw - sA;
+  }
+  return { b0: b0 / a0, b1: b1 / a0, b2: b2 / a0, a1: a1 / a0, a2: a2 / a0 };
+}
+
+function applyBiquad(c, x) {
+  var x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+  for (var i = 0; i < x.length; i++) {
+    var x0 = x[i], y0 = c.b0 * x0 + c.b1 * x1 + c.b2 * x2 - c.a1 * y1 - c.a2 * y2;
+    x2 = x1; x1 = x0; y2 = y1; y1 = y0; x[i] = y0;
+  }
+}
+
+function biquadMagDb(c, f, sr) {
+  var w = 2 * Math.PI * f / sr;
+  var nr = c.b0 + c.b1 * Math.cos(w) + c.b2 * Math.cos(2 * w), ni = -c.b1 * Math.sin(w) - c.b2 * Math.sin(2 * w);
+  var dr = 1 + c.a1 * Math.cos(w) + c.a2 * Math.cos(2 * w), di = -c.a1 * Math.sin(w) - c.a2 * Math.sin(2 * w);
+  return 10 * Math.log10((nr * nr + ni * ni) / (dr * dr + di * di));
+}
+
+function idealDb(t, f, o) {
+  o = o || OPTION_DEFAULTS;
+  if (t.id === 'brown') return -10 * Math.log10(1 + Math.pow(f / o.brownCorner, 2)) + 10 * Math.log10(1 + Math.pow(1000 / o.brownCorner, 2));
+  var db = t.tilt * Math.log2(f / 1000), chain = t.id === 'orange' ? null : filterChain(t.id, o);
+  if (chain) for (var i = 0; i < chain.length; i++) db += biquadMagDb(biquad(chain[i], 48000), f, 48000);
+  return db;
+}
+var WAVE_POINTS = 150;
+var DB_RANGE = 36;
+var BANDS = (function () {
+  var out = [], n = 28, fMin = 40, fMax = 16000, r = Math.pow(fMax / fMin, 1 / n);
+  for (var i = 0; i < n; i++) {
+    var lo = fMin * Math.pow(r, i), hi = lo * r;
+    out.push({ lo: lo, hi: hi, f: Math.sqrt(lo * hi) });
+  }
+  return out;
+})();
+function freqToX(f) { return 600 * Math.log(f / 20) / Math.log(1000); }
+function dbToY(db) { var c = Math.max(-DB_RANGE, Math.min(DB_RANGE, db)); return 80 - c * (72 / DB_RANGE); }
+
+var OKLAB_OK = (function () {
+  try { return !!(window.CSS && CSS.supports('background-image', 'linear-gradient(in oklab, red, blue)')); } catch (e) { return false; }
+})();
+
+function bgStrength(curve, v, live) {
+  if (curve === 'linear') return v;
+  if (curve === 'log') return v <= 0 ? 0 : Math.max(0, 1 + Math.log10(v));
+  if (curve === 'scurve') return v * v * (3 - 2 * v);
+  if (curve === 'live') return live;
+  return v * v;
+}
+
+function easeStops(rgbHex, maxA, from, to, eased, rising) {
+  var n = eased ? 8 : 1, out = [];
+  for (var i = 0; i <= n; i++) {
+    var t = i / n, e = eased ? t * t * (3 - 2 * t) : t;
+    var a = maxA * (rising ? e : 1 - e);
+    out.push(hexToRgba(rgbHex, a.toFixed(3)) + ' ' + (from + (to - from) * t).toFixed(1) + '%');
+  }
+  return out.join(', ');
+}
+
+var REDUCED_MOTION = (function () {
+  try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+})();
+
+// selected-color ring that bends like a slow waveform; louder sound = deeper warp
+function warpRingPath(t, amp, k) {
+  k = Math.max(1, Math.round(k || 3));
+  var k2 = k + 2, k3 = Math.max(1, k - 1);
+  var cx = 38, r0 = 29.5, n = Math.max(96, k2 * 16), d = '';
+  for (var i = 0; i <= n; i++) {
+    var th = i / n * 2 * Math.PI;
+    var r = r0 + amp * (0.55 * Math.sin(k * th + t * 1.1) + 0.3 * Math.sin(k2 * th - t * 1.7) + 0.35 * Math.sin(k3 * th + t * 0.6 + 1));
+    d += (i ? 'L' : 'M') + (cx + r * Math.cos(th)).toFixed(2) + ' ' + (cx + r * Math.sin(th)).toFixed(2);
+  }
+  return d + 'Z';
+}
+
+function motionMode(p) { return p.bgMotion ?? 'both'; }
+function wavesOn(p) { var m = motionMode(p); return !REDUCED_MOTION && (m === 'waves' || m === 'both'); }
+function blobsOn(p) { var m = motionMode(p); return m === 'blobs' || m === 'both'; }
+
+// slow layered sines for the "waves" motion; swell follows the audio's Waves LFO when synced
+function motionWobble(cmp) {
+  var p = cmp.props, st = cmp.state;
+  if (!wavesOn(p)) return { a: 0, b: 0, swell: 0 };
+  var amp = (p.motionIntensity ?? 60) / 100, t = performance.now() / 1000 * (p.motionSpeed ?? 1);
+  var a = amp * (Math.sin(t * 0.6) * 0.6 + Math.sin(t * 1.07 + 1.3) * 0.4);
+  var b = amp * Math.sin(t * 0.37 + 2);
+  var swell = 0;
+  if ((p.motionSync ?? true) && st.playing && cmp.ctx && st.waveDepth > 0) {
+    swell = Math.sin(2 * Math.PI * cmp.ctx.currentTime / st.wavePeriod) * st.waveDepth / 100;
+  }
+  return { a: a, b: b, swell: swell };
+}
+
+function buildBackground(cmp, accent) {
+  var p = cmp.props, st = cmp.state;
+  var curve = p.bgCurve || 'squared', blend = p.bgBlend || 'oklab', eased = p.bgEase !== false, shape = p.bgShape || 'mirror';
+  var v = effVol(st) / 100, live = st.playing ? (cmp.liveLevel || 0) : 0;
+  var s = effVol(st) > 0 ? bgStrength(curve, v, live) : 0;
+  var w = motionWobble(cmp);
+  if (w.swell) s = Math.min(1, s * (1 + 0.35 * w.swell));
+  // Background tweaks: peak opacity, vertical coverage at low → full volume, mirror center
+  var peak = (p.bgOpacity ?? 75) / 100, hMin = p.bgMinHeight ?? 55, hMax = Math.max(hMin, p.bgMaxHeight ?? 85), c0 = p.bgCenter ?? 50;
+  var inSpace = blend === 'oklab' && OKLAB_OK ? ' in oklab' : '';
+  var layers = [];
+  if (shape === 'glow') {
+    if (s > 0.001) {
+      var cx = 50 + (st.pan / 100) * 40 + w.b * 8, ry = (30 + 70 * s) * (1 + w.a * 0.18 + w.swell * 0.2), rx = 110 + w.b * 12;
+      if (w.a || w.b) {
+        var cx2 = 50 + (st.pan / 100) * 40 - w.b * 28 + w.a * 10;
+        layers.push('radial-gradient(ellipse ' + (70 - w.a * 10).toFixed(1) + '% ' + (ry * 0.75).toFixed(1) + '% at ' + cx2.toFixed(1) + '% 100%' + inSpace + ', ' + easeStops(accent, 0.3 * s, 0, 100, eased, false) + ')');
+      }
+      layers.push('radial-gradient(ellipse ' + rx.toFixed(1) + '% ' + ry.toFixed(1) + '% at ' + cx.toFixed(1) + '% 100%' + inSpace + ', ' + easeStops(accent, peak * s, 0, 100, eased, false) + ')');
+    }
+  } else {
+    if (st.pan !== 0) {
+      layers.push('linear-gradient(' + (st.pan < 0 ? 'to right' : 'to left') + inSpace + ', rgba(14,17,22,0) 0%, rgba(14,17,22,' + (Math.abs(st.pan) / 100).toFixed(2) + ') 100%)');
+    }
+    if (s > 0.001 && shape === 'mirror') {
+      var center = c0 + w.b * 6, reach = (hMin + (hMax - hMin) * s) / 2 * (1 + w.a * 0.2 + w.swell * 0.2), top = center - reach, bot = center + reach;
+      layers.push('linear-gradient(to bottom' + inSpace + ', rgba(14,17,22,0) 0%, ' + easeStops(accent, peak * s, top, center, eased, true) + ', ' + easeStops(accent, peak * s, center, bot, eased, false).split(', ').slice(1).join(', ') + ', rgba(14,17,22,0) 100%)');
+    } else if (s > 0.001) {
+      var darkStop = Math.max(2, 100 - (hMin + (hMax - hMin) * s) - (w.a * 8 + w.swell * 8));
+      layers.push('linear-gradient(to bottom' + inSpace + ', rgba(14,17,22,0) 0%, rgba(14,17,22,0) ' + darkStop.toFixed(1) + '%, ' + easeStops(accent, peak * s, darkStop, 100, eased, true).split(', ').slice(1).join(', ') + ')');
+    }
+  }
+  layers.push('#0E1116');
+  return layers.join(', ');
+}
+
+function hexToRgba(hex, a) {
+  var n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+
+function makeNoiseBuffer(ctx, id, o) {
+  var sr = ctx.sampleRate, len = sr * 8;
+  var buf = ctx.createBuffer(2, len, sr);
+  for (var ch = 0; ch < 2; ch++) buf.getChannelData(ch).set(makeNoiseChannel(sr, len, id, o));
+  return buf;
+}
+
+function makeNoiseChannel(sr, len, id, o) {
+  o = o || OPTION_DEFAULTS;
+  var brownR = Math.exp(-2 * Math.PI * o.brownCorner / sr);
+  var fade = Math.floor(sr * 0.05);
+  var raw = new Float32Array(len + fade);
+  var info = NOISE_TYPES.find(function (t) { return t.id === id; }) || {};
+  var type = info.base || id;
+  var b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0, last = 0, prev = 0, prevP = 0;
+  for (var i = 0; i < raw.length; i++) {
+    var w = Math.random() * 2 - 1, v;
+    if (type === 'white') v = w;
+    else if (type === 'violet') { v = w - prev; prev = w; }
+    else if (type === 'brown') { last = brownR * last + (1 - brownR) * w; v = last; }
+    else {
+      b0 = 0.99886 * b0 + w * 0.0555179; b1 = 0.99332 * b1 + w * 0.0750759;
+      b2 = 0.969 * b2 + w * 0.153852; b3 = 0.8665 * b3 + w * 0.3104856;
+      b4 = 0.55 * b4 + w * 0.5329522; b5 = -0.7616 * b5 - w * 0.016898;
+      var p = b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362; b6 = w * 0.115926;
+      if (type === 'blue') { v = p - prevP; prevP = p; } else v = p;
+    }
+    raw[i] = v;
+  }
+  var k;
+  var chain = filterChain(id, o);
+  if (chain) for (k = 0; k < chain.length; k++) applyBiquad(biquad(chain[k], sr), raw);
+  var mean = 0;
+  for (k = 0; k < raw.length; k++) mean += raw[k];
+  mean /= raw.length;
+  var sum = 0;
+  for (k = 0; k < raw.length; k++) { raw[k] -= mean; sum += raw[k] * raw[k]; }
+  var scale = 0.2 / Math.sqrt(sum / raw.length);
+  var d = new Float32Array(len);
+  for (k = 0; k < len; k++) {
+    var s = raw[k];
+    if (k < fade) { var t = k / fade; s = raw[k] * t + raw[len + k] * (1 - t); }
+    s *= scale;
+    d[k] = s > 1 ? 1 : (s < -1 ? -1 : s);
+  }
+  return d;
+}
+
+var STORAGE_KEY = 'noise-app-config';
+var PANES_KEY = 'noise-app-panes';
+function loadPanes() {
+  try { var c = JSON.parse(window.localStorage.getItem(PANES_KEY) || '{}') || {}; return { left: c.left !== false, right: c.right !== false, foldLeft: c.foldLeft === true, foldRight: c.foldRight === true }; }
+  catch (e) { return { left: true, right: true, foldLeft: false, foldRight: false }; }
+}
+var DEFAULT_VOLUME = 50;
+var VOL_FLOOR_DB = -40;
+// slider 0–100 → gain. 'db' maps the slider evenly across VOL_FLOOR_DB…0 dB (perceptually even steps)
+function volumeGain(v, curve) {
+  var x = v / 100;
+  if (x <= 0) return 0;
+  if (curve === 'squared') return x * x;
+  if (curve === 'cubed') return x * x * x;
+  return Math.pow(10, (VOL_FLOOR_DB * (1 - x)) / 20);
+}
+function effVol(st) { return st.muted ? 0 : st.volume; }
+var OPTION_DEFAULTS = { tilt: 0, lowCut: 20, highCut: 20000, width: 0, waveDepth: 0, wavePeriod: 8, brownCorner: 150, greenCenter: 500, greenWidth: 2, greyStrength: 100, orangeQ: 30, orangeTune: 440 };
+var OPTION_LIMITS = { tilt: [-12, 12], lowCut: [20, 300], highCut: [2000, 20000], width: [0, 100], waveDepth: [0, 100], wavePeriod: [4, 20], brownCorner: [20, 300], greenCenter: [200, 2000], greenWidth: [1, 3], greyStrength: [0, 100], orangeQ: [5, 60], orangeTune: [415, 466] };
+function loadConfig() {
+  try {
+    var c = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}') || {};
+    var out = {};
+    if (NOISE_TYPES.some(function (t) { return t.id === c.type; })) out.type = c.type;
+    if (typeof c.volume === 'number' && c.volume >= 0 && c.volume <= 100) out.volume = Math.round(c.volume);
+    if (typeof c.pan === 'number' && c.pan >= -100 && c.pan <= 100) out.pan = Math.round(c.pan);
+    if (typeof c.muted === 'boolean') out.muted = c.muted;
+    Object.keys(OPTION_LIMITS).forEach(function (k) {
+      var lim = OPTION_LIMITS[k];
+      if (typeof c[k] === 'number' && c[k] >= lim[0] && c[k] <= lim[1]) out[k] = c[k];
+    });
+    return out;
+  } catch (e) { return {}; }
+}
+
+class Component extends DCLogic {
+  saveConfig() {
+    try {
+      var st = this.state, cfg = { type: st.type, volume: st.volume, muted: st.muted, pan: st.pan };
+      Object.keys(OPTION_DEFAULTS).forEach(function (k) { cfg[k] = st[k]; });
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+    } catch (e) {}
+  }
+
+  resetConfig() {
+    // keeps the selected color; resets volume, panning and every sound option
+    if (this.ctx && this.state.playing) this.setMaster(volumeGain(DEFAULT_VOLUME, this.props.volCurve), 0.05);
+    if (this.panner) this.panner.pan.setTargetAtTime(0, this.ctx.currentTime, 0.03);
+    var self = this;
+    this.setState(Object.assign({ volume: DEFAULT_VOLUME, muted: false, pan: 0 }, OPTION_DEFAULTS), function () {
+      self.saveConfig();
+      self.applyOptions();
+      if (self.ctx && self.state.playing && self.voiceKey !== colorSignature(self.typeId(), self.state)) self.startSource(self.typeId());
+    });
+  }
+
+  setOption(key, value) {
+    var self = this, o = {};
+    o[key] = value;
+    this.setState(o, function () {
+      self.saveConfig();
+      self.applyOptions();
+      if (COLOR_OPTION_KEYS[key] && COLOR_OPTION_KEYS[key] === self.typeId()) self.scheduleRegen();
+    });
+  }
+
+  scheduleRegen() {
+    var self = this;
+    clearTimeout(this.regenTimer);
+    this.regenTimer = setTimeout(function () {
+      if (self.ctx && self.state.playing) self.startSource(self.typeId());
+    }, 250);
+  }
+
+  applyOptions() {
+    if (!this.ctx) return;
+    var st = this.state, t = this.ctx.currentTime, k = 0.05;
+    var th = (st.width / 100) * Math.PI / 4, c = Math.cos(th), sn = Math.sin(th);
+    this.wAL.gain.setTargetAtTime(c, t, k);
+    this.wAR.gain.setTargetAtTime(c, t, k);
+    this.wBL.gain.setTargetAtTime(sn, t, k);
+    this.wBR.gain.setTargetAtTime(-sn, t, k);
+    this.lowCutF.frequency.setTargetAtTime(st.lowCut, t, k);
+    this.highCutF.frequency.setTargetAtTime(st.highCut, t, k);
+    this.tiltLow.gain.setTargetAtTime(-st.tilt / 2, t, k);
+    this.tiltHigh.gain.setTargetAtTime(st.tilt / 2, t, k);
+    var depth = st.waveDepth / 100;
+    this.waveLfo.frequency.setTargetAtTime(1 / st.wavePeriod, t, 0.2);
+    this.waveLfoGain.gain.setTargetAtTime(depth / 2, t, 0.2);
+    this.waveGain.gain.setTargetAtTime(1 - depth / 2, t, 0.2);
+  }
+
+  constructor(props) {
+    super(props);
+    var saved = loadConfig();
+    this.state = Object.assign({ type: saved.type || null, playing: false, volume: saved.volume != null ? saved.volume : DEFAULT_VOLUME, compare: false, advanced: false, immersive: false, pinLeft: loadPanes().left, pinRight: loadPanes().right, foldLeft: loadPanes().foldLeft, foldRight: loadPanes().foldRight, pan: saved.pan || 0, muted: !!saved.muted }, OPTION_DEFAULTS);
+    var self = this;
+    Object.keys(OPTION_DEFAULTS).forEach(function (k) { if (saved[k] != null) self.state[k] = saved[k]; });
+    this.bands = null;
+    this.points = null;
+    this.buffers = {};
+    this.raf = null;
+    this.lastVolume = this.state.volume > 0 ? this.state.volume : DEFAULT_VOLUME;
+  }
+
+  componentDidMount() {
+    // drives the "waves" background while the audio loop isn't already re-rendering each frame
+    var self = this, last = 0;
+    var tick = function (now) {
+      self.motionRaf = requestAnimationFrame(tick);
+      if (self.raf || !wavesOn(self.props) || effVol(self.state) === 0) return;
+      if (now - last < 33) return;
+      last = now;
+      self.forceUpdate();
+    };
+    this.motionRaf = requestAnimationFrame(tick);
+    // leaving browser fullscreen (e.g. Esc) also leaves the immersive view
+    this.onFsChange = function () {
+      if (!document.fullscreenElement && self.state.immersive) self.exitImmersive();
+    };
+    document.addEventListener('fullscreenchange', this.onFsChange);
+  }
+
+  enterImmersive() {
+    this.setState({ immersive: true }, function () {
+      var el = document.getElementById('exit-immersive');
+      if (el) el.focus({ preventScroll: true });
+    });
+    try {
+      var root = document.documentElement;
+      if (root.requestFullscreen && !document.fullscreenElement) root.requestFullscreen().catch(function () {});
+    } catch (e) {}
+  }
+
+  savePanes() {
+    var st = this.state;
+    try { window.localStorage.setItem(PANES_KEY, JSON.stringify({ left: st.pinLeft, right: st.pinRight, foldLeft: st.foldLeft, foldRight: st.foldRight })); } catch (e) {}
+  }
+
+  // narrow layout only: fold a stacked panel down to its header
+  toggleFold(key) {
+    var o = {}, self = this;
+    o[key] = !this.state[key];
+    this.setState(o, function () { self.savePanes(); });
+  }
+
+  releaseSlot(e, pinKey, suppressKey) {
+    if (this.state[suppressKey]) { var o = {}; o[suppressKey] = false; this.setState(o); }
+    if (this.state[pinKey]) return;
+    try {
+      var slot = e && e.currentTarget, el = document.activeElement;
+      if (slot && el && slot.contains(el)) el.blur();
+    } catch (err) {}
+  }
+
+  togglePin(key) {
+    var o = {}, self = this;
+    o[key] = !this.state[key];
+    // unpinning collapses right away instead of waiting for the pointer to leave
+    if (!o[key]) {
+      o[key === 'pinLeft' ? 'suppressLeft' : 'suppressRight'] = true;
+      try { if (document.activeElement) document.activeElement.blur(); } catch (e) {}
+    }
+    this.setState(o, function () {
+      self.savePanes();
+    });
+  }
+
+  exitImmersive() {
+    if (!this.state.immersive) return;
+    this.setState({ immersive: false });
+    try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {}); } catch (e) {}
+  }
+
+  componentWillUnmount() {
+    if (this.onFsChange) document.removeEventListener('fullscreenchange', this.onFsChange);
+    if (this.motionRaf) cancelAnimationFrame(this.motionRaf);
+    if (this.raf) cancelAnimationFrame(this.raf);
+    if (this.ctx) this.ctx.close();
+  }
+
+  typeId() { return this.state.type || this.props.startType || 'pink'; }
+
+  ensureAudio() {
+    if (this.ctx) return;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0;
+    this.analyser = this.ctx.createAnalyser();
+    this.analyser.fftSize = 8192;
+    this.analyser.smoothingTimeConstant = 0.85;
+    var ctx = this.ctx;
+    // stereo width: L = c*a + s*b, R = c*a - s*b  (a, b = independent noise channels)
+    var split = ctx.createChannelSplitter(2), merge = ctx.createChannelMerger(2);
+    this.wAL = ctx.createGain(); this.wBL = ctx.createGain(); this.wAR = ctx.createGain(); this.wBR = ctx.createGain();
+    this.master.connect(split);
+    split.connect(this.wAL, 0); split.connect(this.wAR, 0); split.connect(this.wBL, 1); split.connect(this.wBR, 1);
+    this.wAL.connect(merge, 0, 0); this.wBL.connect(merge, 0, 0); this.wAR.connect(merge, 0, 1); this.wBR.connect(merge, 0, 1);
+    // tone
+    this.lowCutF = ctx.createBiquadFilter(); this.lowCutF.type = 'highpass'; this.lowCutF.Q.value = 0.707;
+    this.highCutF = ctx.createBiquadFilter(); this.highCutF.type = 'lowpass'; this.highCutF.Q.value = 0.707;
+    this.tiltLow = ctx.createBiquadFilter(); this.tiltLow.type = 'lowshelf'; this.tiltLow.frequency.value = 800;
+    this.tiltHigh = ctx.createBiquadFilter(); this.tiltHigh.type = 'highshelf'; this.tiltHigh.frequency.value = 1250;
+    // waves (slow volume swell)
+    this.waveGain = ctx.createGain();
+    this.waveLfo = ctx.createOscillator(); this.waveLfo.type = 'sine';
+    this.waveLfoGain = ctx.createGain(); this.waveLfoGain.gain.value = 0;
+    this.waveLfo.connect(this.waveLfoGain); this.waveLfoGain.connect(this.waveGain.gain);
+    this.waveLfo.start();
+    merge.connect(this.lowCutF); this.lowCutF.connect(this.highCutF); this.highCutF.connect(this.tiltLow);
+    this.tiltLow.connect(this.tiltHigh); this.tiltHigh.connect(this.waveGain);
+    if (ctx.createStereoPanner) {
+      this.panner = ctx.createStereoPanner();
+      this.panner.pan.value = this.state.pan / 100;
+      this.waveGain.connect(this.panner);
+      this.panner.connect(this.analyser);
+    } else {
+      this.waveGain.connect(this.analyser);
+    }
+    this.applyOptions();
+    this.analyser.connect(this.ctx.destination);
+    this.wave = new Float32Array(this.analyser.fftSize);
+    this.freq = new Float32Array(this.analyser.frequencyBinCount);
+  }
+
+  startSource(type) {
+    var ctx = this.ctx;
+    var key = colorSignature(type, this.state);
+    if (!this.buffers[key]) this.buffers[key] = makeNoiseBuffer(ctx, type, this.state);
+    var src = ctx.createBufferSource(), g = ctx.createGain();
+    src.buffer = this.buffers[key];
+    src.loop = true;
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.3);
+    src.connect(g); g.connect(this.master);
+    src.start();
+    var old = this.voice;
+    if (old) {
+      old.g.gain.cancelScheduledValues(ctx.currentTime);
+      old.g.gain.setValueAtTime(old.g.gain.value, ctx.currentTime);
+      old.g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+      old.src.stop(ctx.currentTime + 0.35);
+    }
+    this.voice = { src: src, g: g };
+    this.voiceType = type;
+    this.voiceKey = key;
+  }
+
+  setMaster(v, time) {
+    var gp = this.master.gain, now = this.ctx.currentTime;
+    gp.cancelScheduledValues(now);
+    gp.setTargetAtTime(v, now, time);
+  }
+
+  level() { return volumeGain(effVol(this.state), this.props.volCurve); }
+
+  play(id) {
+    this.ensureAudio();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    var want = id || this.typeId();
+    if (!this.voice || this.voiceType !== want) this.startSource(want);
+    this.setMaster(this.level(), 0.08);
+    this.stopAt = null;
+    this.setState({ playing: true });
+    this.loop();
+  }
+
+  pause() {
+    if (!this.ctx) return;
+    this.setMaster(0, 0.06);
+    this.stopAt = performance.now() + 500;
+    this.setState({ playing: false });
+  }
+
+  loop() {
+    if (this.raf) return;
+    var self = this;
+    var tick = function () {
+      self.analyser.getFloatTimeDomainData(self.wave);
+      var step = Math.floor(2048 / WAVE_POINTS), pts = [];
+      for (var i = 0; i < WAVE_POINTS; i++) pts.push(self.wave[i * step]);
+      self.points = pts;
+      var ss = 0;
+      for (var r = 0; r < 2048; r++) ss += self.wave[r] * self.wave[r];
+      var rmsDb = 10 * Math.log10(ss / 2048 + 1e-12);
+      var target = Math.max(0, Math.min(1, (rmsDb + 50) / 36));
+      self.liveLevel = (self.liveLevel || 0) * 0.9 + target * 0.1;
+      if (self.state.compare && self.state.playing) self.measureBands();
+      if (self.stopAt && performance.now() > self.stopAt) {
+        self.raf = null;
+        self.points = null;
+        self.liveLevel = 0;
+        self.bands = null;
+        if (self.voice) { self.voice.src.stop(); self.voice = null; }
+        self.ctx.suspend();
+        self.forceUpdate();
+        return;
+      }
+      self.forceUpdate();
+      self.raf = requestAnimationFrame(tick);
+    };
+    this.raf = requestAnimationFrame(tick);
+  }
+
+  applyPan(v) {
+    if (Math.abs(v) <= 3) v = 0;
+    this.setState({ pan: v }, () => this.saveConfig());
+    if (this.panner) this.panner.pan.setTargetAtTime(v / 100, this.ctx.currentTime, 0.03);
+  }
+
+  measureBands() {
+    this.analyser.getFloatFrequencyData(this.freq);
+    var binHz = this.ctx.sampleRate / this.analyser.fftSize, out = [];
+    for (var b = 0; b < BANDS.length; b++) {
+      var lo = Math.max(1, Math.floor(BANDS[b].lo / binHz)), hi = Math.max(lo + 1, Math.ceil(BANDS[b].hi / binHz));
+      var sum = 0, n = 0;
+      for (var k = lo; k < hi && k < this.freq.length; k++) { sum += Math.pow(10, this.freq[k] / 10); n++; }
+      out.push(n && sum > 0 ? 10 * Math.log10(sum / n) : -120);
+    }
+    if (!this.bands) this.bands = out;
+    else for (var j = 0; j < out.length; j++) this.bands[j] = this.bands[j] * 0.8 + out[j] * 0.2;
+  }
+
+  renderVals() {
+    var self = this;
+    var id = this.typeId();
+    var current = NOISE_TYPES.find(function (t) { return t.id === id; }) || NOISE_TYPES[1];
+    var accent = current.color;
+    var playing = this.state.playing;
+    var compare = this.state.compare;
+    var st = this.state;
+
+    var idealPts = [];
+    for (var q = 0; q <= 80; q++) {
+      var fq = 20 * Math.pow(1000, q / 80);
+      idealPts.push([freqToX(fq), dbToY(idealDb(current, fq, st))]);
+    }
+    var idealPath = idealPts.map(function (pt, q) { return (q ? 'L' : 'M') + pt[0].toFixed(1) + ' ' + pt[1].toFixed(1); }).join(' ');
+    var measuredPath = '', areaPts = null;
+    if (compare && playing && this.bands && effVol(this.state) > 0) {
+      var ideal = BANDS.map(function (b) { return idealDb(current, b.f, st); });
+      var offset = 0;
+      for (var m = 0; m < BANDS.length; m++) offset += ideal[m] - this.bands[m];
+      offset /= BANDS.length;
+      areaPts = BANDS.map(function (b, m) { return [freqToX(b.f), dbToY(self.bands[m] + offset)]; });
+      measuredPath = areaPts.map(function (pt, m) { return (m ? 'L' : 'M') + pt[0].toFixed(1) + ' ' + pt[1].toFixed(1); }).join(' ');
+    }
+    var deltaArea;
+    if (areaPts) {
+      deltaArea = 'M' + areaPts[0][0].toFixed(1) + ' 80 ' + areaPts.map(function (pt) { return 'L' + pt[0].toFixed(1) + ' ' + pt[1].toFixed(1); }).join(' ') + ' L' + areaPts[areaPts.length - 1][0].toFixed(1) + ' 80 Z';
+    } else {
+      deltaArea = 'M0 80 ' + idealPts.map(function (pt) { return 'L' + pt[0].toFixed(1) + ' ' + pt[1].toFixed(1); }).join(' ') + ' L600 80 Z';
+    }
+
+    var d = 'M0 80 L600 80';
+    if (this.points) {
+      var p = this.points, parts = [];
+      for (var i = 0; i < p.length; i++) {
+        var x = (i / (p.length - 1)) * 600;
+        var y = 80 - Math.max(-1, Math.min(1, p[i] * 2.4)) * 74;
+        parts.push((i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1));
+      }
+      d = parts.join(' ');
+    }
+
+    return {
+      accent: accent,
+      dotAnimClass: (function () {
+        // flip between twin a/b classes on each color change so the animation replays; no animation on first render
+        if (self.dotType !== id) { if (self.dotType != null) self.dotFlip = self.dotFlip === 'a' ? 'b' : 'a'; self.dotType = id; }
+        var mode = self.props.dotAnim ?? 'pop';
+        return self.dotFlip && mode !== 'none' ? 'dot-' + mode + '-' + self.dotFlip : '';
+      })(),
+      pageBg: buildBackground(this, accent),
+      blobsOn: blobsOn(this.props),
+      blobDur: (24 / (this.props.motionSpeed ?? 1)).toFixed(2) + 's',
+      blobOpacity: (function () {
+        var amt = (self.props.motionIntensity ?? 60) / 100;
+        var s = effVol(st) > 0 ? bgStrength(self.props.bgCurve || 'squared', effVol(st) / 100, playing ? (self.liveLevel || 0) : 0) : 0;
+        return (amt * (0.25 + 0.75 * s)).toFixed(3);
+      })(),
+      current: current,
+      playing: playing,
+      paused: !playing,
+      volume: this.state.volume,
+      wavePath: d,
+      waveOpacity: compare ? '0.3' : '1',
+      compare: compare,
+      comparePressed: compare ? 'true' : 'false',
+      compareIconColor: compare ? accent : '#E9E7E2',
+      compareBorder: compare ? accent : '#2A323D',
+      compareBg: compare ? hexToRgba(accent, 0.16) : 'rgba(14,17,22,0.6)',
+      idealPath: idealPath,
+      measuredPath: measuredPath,
+      deltaArea: deltaArea,
+      compareNote: current.id === 'white'
+        ? 'White is the flat reference line.\nSelect another color to see its difference.'
+        : (playing ? 'Solid: measured · Dashed: ideal\nFlat line: white noise' : 'Dashed: ideal shape\nPress play to measure live'),
+      advanced: this.state.advanced,
+      advancedExpanded: this.state.advanced ? 'true' : 'false',
+      chevronRotate: this.state.advanced ? '180deg' : '0deg',
+      gearRotate: this.state.advanced ? '90deg' : '0deg',
+      advBorder: this.state.advanced ? accent : '#2A323D',
+      advPanelBg: this.state.advanced ? '#0E1116' : 'transparent',
+      advHeaderBg: this.state.advanced ? hexToRgba(accent, 0.12) : 'transparent',
+      advIconBg: this.state.advanced ? hexToRgba(accent, 0.2) : '#1C232C',
+      advChevronBg: this.state.advanced ? accent : '#1C232C',
+      advChevronColor: this.state.advanced ? '#0E1116' : '#C4CAD2',
+      advDivider: hexToRgba(accent, 0.35),
+      advSummary: this.state.advanced ? 'Tap to hide' : (function () {
+        var parts = [];
+        if (st.pan !== 0) parts.push('Pan ' + (st.pan < 0 ? 'L ' + (-st.pan) : 'R ' + st.pan));
+        if (st.width > 0) parts.push('Width ' + st.width + '%');
+        if (st.tilt !== 0) parts.push('Tilt ' + (st.tilt > 0 ? '+' : '') + st.tilt);
+        if (st.lowCut > 21) parts.push('Low cut');
+        if (st.highCut < 19900) parts.push('High cut');
+        if (st.waveDepth > 0) parts.push('Waves');
+        return parts.length ? parts.join(' · ') : 'Panning, width, tone and waves';
+      })(),
+      advBg: this.state.advanced ? hexToRgba(accent, 0.14) : '#1C232C',
+      pan: this.state.pan,
+      panText: this.state.pan === 0 ? 'Center' : (this.state.pan < 0 ? 'L ' + (-this.state.pan) : 'R ' + this.state.pan),
+      resetAll: function () { self.resetConfig(); },
+      tilt: st.tilt,
+      tiltText: st.tilt === 0 ? 'Neutral' : (st.tilt > 0 ? '+' + st.tilt + ' dB brighter' : (-st.tilt) + ' dB warmer'),
+      lowCutPos: Math.round(100 * Math.log(st.lowCut / 20) / Math.log(15)),
+      lowCutText: st.lowCut <= 21 ? 'Off' : Math.round(st.lowCut) + ' Hz',
+      highCutPos: Math.round(100 * Math.log10(st.highCut / 2000)),
+      highCutText: st.highCut >= 19900 ? 'Off' : (st.highCut / 1000).toFixed(1) + ' kHz',
+      width: st.width,
+      widthText: st.width === 0 ? 'Mono' : (st.width === 100 ? 'Full' : st.width + '%'),
+      waveDepth: st.waveDepth,
+      waveDepthText: st.waveDepth === 0 ? 'Off' : st.waveDepth + '%',
+      wavePeriod: st.wavePeriod,
+      wavePeriodText: st.wavePeriod + ' s per wave',
+      setTilt: function (e) { self.setOption('tilt', Number(e.target.value)); },
+      setLowCut: function (e) { self.setOption('lowCut', Math.round(20 * Math.pow(15, Number(e.target.value) / 100))); },
+      setHighCut: function (e) { self.setOption('highCut', Math.round(2000 * Math.pow(10, Number(e.target.value) / 100))); },
+      setWidth: function (e) { self.setOption('width', Number(e.target.value)); },
+      setWaveDepth: function (e) { self.setOption('waveDepth', Number(e.target.value)); },
+      setWavePeriod: function (e) { self.setOption('wavePeriod', Number(e.target.value)); },
+      colorOptsTitle: current.name + ' settings',
+      isBrown: current.id === 'brown', isGreen: current.id === 'green', isGrey: current.id === 'grey', isOrange: current.id === 'orange',
+      noColorOpts: ['brown', 'green', 'grey', 'orange'].indexOf(current.id) < 0,
+      noColorOptsText: current.name + ' noise has no extra settings. Brown, Green, Grey and Orange do.',
+      brownCornerPos: Math.round(100 * Math.log(st.brownCorner / 20) / Math.log(15)),
+      brownCornerText: 'levels off at ' + Math.round(st.brownCorner) + ' Hz',
+      greenCenterPos: Math.round(100 * Math.log10(st.greenCenter / 200)),
+      greenCenterText: Math.round(st.greenCenter) + ' Hz',
+      greenWidthPos: Math.round(st.greenWidth * 10),
+      greenWidthText: '±' + st.greenWidth.toFixed(1) + ' octaves',
+      greyStrength: st.greyStrength,
+      greyStrengthText: st.greyStrength === 0 ? 'Off (white)' : st.greyStrength + '%',
+      orangeQ: st.orangeQ,
+      orangeQText: st.orangeQ >= 45 ? 'Very narrow' : (st.orangeQ >= 25 ? 'Narrow' : (st.orangeQ >= 12 ? 'Medium' : 'Wide')),
+      orangeTune: st.orangeTune,
+      orangeTuneText: 'A = ' + st.orangeTune + ' Hz',
+      setBrownCorner: function (e) { self.setOption('brownCorner', Math.round(20 * Math.pow(15, Number(e.target.value) / 100))); },
+      setGreenCenter: function (e) { self.setOption('greenCenter', Math.round(200 * Math.pow(10, Number(e.target.value) / 100))); },
+      setGreenWidth: function (e) { self.setOption('greenWidth', Number(e.target.value) / 10); },
+      setGreyStrength: function (e) { self.setOption('greyStrength', Number(e.target.value)); },
+      setOrangeQ: function (e) { self.setOption('orangeQ', Number(e.target.value)); },
+      setOrangeTune: function (e) { self.setOption('orangeTune', Number(e.target.value)); },
+      toggleAdvanced: function () { self.setState({ advanced: !self.state.advanced }); },
+      setPan: function (e) { self.applyPan(Number(e.target.value)); },
+      centerPan: function () { self.applyPan(0); },
+      toggleCompare: function () { self.bands = null; self.setState({ compare: !self.state.compare }); },
+      // tuned for the dark theme: soft coral / amber / mint, all ≥ 7:1 on #0E1116
+      statusColor: !playing ? '#F2867E' : (effVol(this.state) === 0 ? '#EBC66A' : '#74D69A'),
+      statusText: playing ? (effVol(this.state) === 0 ? 'Muted · ' : 'Playing · ') + current.name : 'Paused',
+      waveLabel: playing ? 'Live waveform of ' + current.name.toLowerCase() + ' noise' : 'Waveform, idle',
+      playLabel: playing ? 'Pause' : 'Play',
+      types: NOISE_TYPES.map(function (t) {
+        var on = t.id === id, live = on && self.state.playing, ringMode = self.props.ringAnim ?? 'pulse';
+        return {
+          name: t.name,
+          color: t.color,
+          pressed: on ? 'true' : 'false',
+          slope: t.slope,
+          rowBg: on ? '#1C232C' : 'transparent',
+          ring: !on ? '0 0 0 0 rgba(28,35,44,0), 0 0 0 0 ' + hexToRgba(t.color, 0)
+            : (live && ringMode === 'warp' ? '0 0 0 4px #1C232C, 0 0 0 4px ' + hexToRgba(t.color, 0)
+            : '0 0 0 4px #1C232C, 0 0 0 7px ' + (!self.state.playing ? hexToRgba(t.color, 0.4) : (ringMode === 'orbit' ? hexToRgba(t.color, 0.25) : t.color))),
+          ringClass: live ? ({ pulse: 'ring-pulse', ripple: 'ring-ripple', orbit: 'ring-orbit' }[ringMode] || '') : '',
+          warpOn: live && ringMode === 'warp',
+          warpPath: live && ringMode === 'warp' ? warpRingPath(performance.now() / 1000, REDUCED_MOTION ? 0 : 1.6 + 2.6 * (self.liveLevel || 0), self.props.ringWaves ?? 3) : '',
+          labelColor: on ? '#E9E7E2' : '#9AA3AE',
+          labelWeight: on ? '600' : '500',
+          ariaLabel: t.name + ' noise',
+          peek: function () { if (self.state.peekType !== t.id) self.setState({ peekType: t.id }); },
+          unpeek: function () { if (self.state.peekType === t.id) self.setState({ peekType: null }); },
+          // selecting a color only changes the color: crossfades if playing, never starts or stops playback
+          pick: function () {
+            if (t.id === self.typeId()) return;
+            self.setState({ type: t.id }, function () { self.saveConfig(); });
+            if (self.state.playing) self.startSource(t.id);
+          }
+        };
+      }),
+      toggle: function () { if (self.state.playing) self.pause(); else self.play(); },
+      // play button ripples outward in the noise color while sound is playing
+      playRippleClass: playing ? 'play-ripple' : '',
+      immersive: this.state.immersive,
+      // lets CSS hide the color description while the color panel is collapsed (unpinned on desktop, folded on mobile)
+      paneStateClass: (st.pinLeft ? '' : 'left-collapsed') + (st.foldLeft ? ' left-folded' : '') + (st.peekType ? ' desc-peek' : ''),
+      // hovering/focusing a color button previews that color's description (shown even when normally hidden)
+      descText: (NOISE_TYPES.find(function (n) { return n.id === st.peekType; }) || current).desc,
+      // collapsible side panes: pinned = docked open; unpinned = 48px rail that opens on hover/focus
+      leftW: st.pinLeft ? '300px' : '48px',
+      rightW: st.pinRight ? '360px' : '48px',
+      slotLeftClass: (st.pinLeft ? '' : ('is-collapsed' + (st.suppressLeft ? ' is-suppressed' : ''))) + (st.foldLeft ? ' is-folded' : ''),
+      slotRightClass: (st.pinRight ? '' : ('is-collapsed' + (st.suppressRight ? ' is-suppressed' : ''))) + (st.foldRight ? ' is-folded' : ''),
+      toggleFoldLeft: function () { self.toggleFold('foldLeft'); },
+      toggleFoldRight: function () { self.toggleFold('foldRight'); },
+      foldExpandedLeft: st.foldLeft ? 'false' : 'true',
+      foldExpandedRight: st.foldRight ? 'false' : 'true',
+      foldLabelLeft: (st.foldLeft ? 'Show' : 'Hide') + ' color options (' + current.name + ' selected)',
+      foldLabelRight: (st.foldRight ? 'Show' : 'Hide') + ' sound options',
+      foldRotLeft: st.foldLeft ? '0deg' : '180deg',
+      foldRotRight: st.foldRight ? '0deg' : '180deg',
+      soundFoldSummary: (function () {
+        var n = 0;
+        Object.keys(OPTION_DEFAULTS).forEach(function (k) {
+          if (COLOR_OPTION_KEYS[k] && COLOR_OPTION_KEYS[k] !== current.id) return;
+          if (st[k] !== OPTION_DEFAULTS[k]) n++;
+        });
+        if (st.pan !== 0) n++;
+        return n === 0 ? 'Defaults' : n + ' changed';
+      })(),
+      // pointer left an unpinned panel: drop focus held inside it (e.g. a just-clicked color) so it can close
+      releaseLeft: function (e) { self.releaseSlot(e, 'pinLeft', 'suppressLeft'); },
+      releaseRight: function (e) { self.releaseSlot(e, 'pinRight', 'suppressRight'); },
+      pinnedLeft: st.pinLeft ? 'true' : 'false',
+      pinnedRight: st.pinRight ? 'true' : 'false',
+      pinLabelLeft: st.pinLeft ? 'Unpin color panel' : 'Pin color panel open',
+      pinLabelRight: st.pinRight ? 'Unpin sound panel' : 'Pin sound panel open',
+      pinFillLeft: st.pinLeft ? 'currentColor' : 'none',
+      pinFillRight: st.pinRight ? 'currentColor' : 'none',
+      pinBgLeft: st.pinLeft ? hexToRgba(accent, 0.16) : 'transparent',
+      pinBgRight: st.pinRight ? hexToRgba(accent, 0.16) : 'transparent',
+      pinColorLeft: st.pinLeft ? accent : '#9AA3AE',
+      pinColorRight: st.pinRight ? accent : '#9AA3AE',
+      togglePinLeft: function () { self.togglePin('pinLeft'); },
+      togglePinRight: function () { self.togglePin('pinRight'); },
+      // in fullscreen, text also fades away while sound is audible (playing and not muted); it returns when paused or muted
+      immersiveClass: this.state.immersive ? 'is-immersive' + (playing && effVol(st) > 0 ? ' is-audible' : '') : '',
+      enterImmersive: function () { self.enterImmersive(); },
+      exitImmersive: function () { self.exitImmersive(); },
+      // any key exits; handled on the focused overlay, not globally
+      immersiveKey: function (e) {
+        if (e.key === 'Tab' || e.key === 'Shift' || e.key === 'Meta' || e.key === 'Control' || e.key === 'Alt') return;
+        e.preventDefault();
+        self.exitImmersive();
+      },
+      setVolume: function (e) {
+        var v = Number(e.target.value);
+        // dragging while muted unmutes
+        self.setState({ volume: v, muted: false }, function () { self.saveConfig(); });
+        if (v > 0) self.lastVolume = v;
+        if (self.ctx && self.state.playing) self.setMaster(volumeGain(v, self.props.volCurve), 0.05);
+      },
+      toggleMute: function () {
+        var st = self.state, patch;
+        if (st.muted) patch = { muted: false };
+        else if (st.volume === 0) patch = { volume: self.lastVolume || DEFAULT_VOLUME }; // "unmute" from 0
+        else patch = { muted: true };
+        self.setState(patch, function () {
+          self.saveConfig();
+          if (self.ctx && self.state.playing) self.setMaster(self.level(), 0.05);
+        });
+      },
+      volumeShort: st.muted ? 'Muted' : st.volume + '%',
+      // 'full': waveform breaks out of the card and runs edge to edge across the window
+      cardBg: (this.props.vizWidth ?? 'full') === 'full' ? 'rgba(21,26,33,0)' : '#151A21',
+      cardBorder: (this.props.vizWidth ?? 'full') === 'full' ? 'rgba(35,42,51,0)' : '#232A33',
+      vizW: (this.props.vizWidth ?? 'full') === 'full' ? '100vw' : '100%',
+      vizML: (this.props.vizWidth ?? 'full') === 'full' ? 'calc(50% - 50vw)' : '0px',
+      vizH: (this.props.vizWidth ?? 'full') === 'full' ? '260px' : '200px',
+      vizBandBg: (this.props.vizWidth ?? 'full') === 'full' && (this.props.vizBacking ?? false) ? 'rgba(21,26,33,0.55)' : 'rgba(21,26,33,0)',
+      vizBandLine: (this.props.vizWidth ?? 'full') === 'full' && (this.props.vizBacking ?? false) ? 'rgba(233,231,226,0.08)' : 'rgba(233,231,226,0)',
+      // fade the waveform out while stopped (it fades back in on play)
+      waveSvgOpacity: !playing && (this.props.vizHideIdle ?? true) ? '0' : '0.55',
+      hasColorOpts: ['brown', 'green', 'grey', 'orange'].indexOf(current.id) >= 0,
+      charChanged: Object.keys(COLOR_OPTION_KEYS).some(function (k) { return COLOR_OPTION_KEYS[k] === current.id && st[k] !== OPTION_DEFAULTS[k]; }),
+      toneChanged: st.tilt !== OPTION_DEFAULTS.tilt || st.lowCut > 21 || st.highCut < 19900,
+      spaceChanged: st.pan !== 0 || st.width !== OPTION_DEFAULTS.width,
+      wavesChanged: st.waveDepth !== OPTION_DEFAULTS.waveDepth || st.wavePeriod !== OPTION_DEFAULTS.wavePeriod,
+      wavePeriodOpacity: st.waveDepth === 0 ? '0.45' : '1',
+      // double-click any slider to return it to its default
+      dbl: Object.keys(OPTION_DEFAULTS).reduce(function (acc, k) {
+        acc[k] = function () { self.setOption(k, OPTION_DEFAULTS[k]); };
+        return acc;
+      }, {}),
+      mutedPressed: st.muted ? 'true' : 'false',
+      muteLabel: effVol(st) === 0 ? 'Unmute' : 'Mute',
+      muteBg: effVol(st) === 0 ? hexToRgba(accent, 0.16) : 'transparent',
+      muteColor: effVol(st) === 0 ? accent : '#9AA3AE',
+      volIconMuted: effVol(st) === 0,
+      volIconLow: effVol(st) > 0 && st.volume < 50,
+      volIconHigh: effVol(st) >= 50,
+      volumeText: st.muted ? 'Muted (' + st.volume + '%)' : st.volume + '%'
+    };
+  }
+}
+</script>
+</body>
+</html>
