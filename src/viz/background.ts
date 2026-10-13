@@ -29,7 +29,9 @@ function easeStops(hex: string, maxA: number, from: number, to: number, eased: b
   for (let i = 0; i <= n; i++) {
     const t = i / n;
     const e = eased ? t * t * (3 - 2 * t) : t;
-    out.push(`${hexToRgba(hex, (maxA * (1 - e)).toFixed(3))} ${(from + (to - from) * t).toFixed(1)}%`);
+    out.push(
+      `${hexToRgba(hex, (maxA * (1 - e)).toFixed(3))} ${(from + (to - from) * t).toFixed(1)}%`,
+    );
   }
   return out.join(', ');
 }

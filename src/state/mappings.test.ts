@@ -1,10 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from './defaults';
 import {
-  brownCorner, brownCornerText, changeFlags, changedCount, effectiveVolume, greenCenter,
-  greenCenterText, greenWidth, greenWidthText, greyStrengthText, highCut, highCutText, lowCut,
-  lowCutText, orangeQText, orangeTuneText, panText, statusColor, statusText, tiltText,
-  volumeGain, volumeShort, volumeText, waveDepthText, wavePeriodText, widthText,
+  brownCorner,
+  brownCornerText,
+  changeFlags,
+  changedCount,
+  effectiveVolume,
+  greenCenter,
+  greenCenterText,
+  greenWidth,
+  greenWidthText,
+  greyStrengthText,
+  highCut,
+  highCutText,
+  lowCut,
+  lowCutText,
+  orangeQText,
+  orangeTuneText,
+  panText,
+  statusColor,
+  statusText,
+  tiltText,
+  volumeGain,
+  volumeShort,
+  volumeText,
+  waveDepthText,
+  wavePeriodText,
+  widthText,
 } from './mappings';
 
 const pink = { ...DEFAULT_SETTINGS, type: 'pink' as const };
@@ -17,7 +39,8 @@ describe('volumeGain', () => {
     expect(volumeGain(80, true)).toBe(0);
   });
   it('is strictly increasing over 1..100', () => {
-    for (let v = 2; v <= 100; v++) expect(volumeGain(v, false)).toBeGreaterThan(volumeGain(v - 1, false));
+    for (let v = 2; v <= 100; v++)
+      expect(volumeGain(v, false)).toBeGreaterThan(volumeGain(v - 1, false));
   });
   it('effectiveVolume is 0 when muted', () => {
     expect(effectiveVolume({ ...pink, volume: 70, muted: true })).toBe(0);
@@ -97,7 +120,12 @@ describe('changes', () => {
     expect(changedCount({ ...DEFAULT_SETTINGS, pan: 10, tilt: 2 })).toBe(2);
   });
   it('computes group flags', () => {
-    expect(changeFlags(DEFAULT_SETTINGS)).toEqual({ char: false, tone: false, space: false, waves: false });
+    expect(changeFlags(DEFAULT_SETTINGS)).toEqual({
+      char: false,
+      tone: false,
+      space: false,
+      waves: false,
+    });
     expect(changeFlags({ ...DEFAULT_SETTINGS, type: 'green', greenWidth: 1 }).char).toBe(true);
     expect(changeFlags({ ...DEFAULT_SETTINGS, type: 'blue', greenWidth: 1 }).char).toBe(false);
     expect(changeFlags({ ...DEFAULT_SETTINGS, highCut: 8000 }).tone).toBe(true);

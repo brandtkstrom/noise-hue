@@ -10,7 +10,12 @@ import {
   removePreset,
 } from './presets';
 
-const mk = (name: string, id = name, type: Preset['type'] = 'pink', o: Partial<SoundOptions> = {}): Preset => ({
+const mk = (
+  name: string,
+  id = name,
+  type: Preset['type'] = 'pink',
+  o: Partial<SoundOptions> = {},
+): Preset => ({
   id,
   name,
   type,
@@ -23,7 +28,9 @@ describe('nextPresetName', () => {
   });
   it('starts at 1 and ignores other prefixes / non-integers', () => {
     expect(nextPresetName([], 'Pink')).toBe('Pink 1');
-    expect(nextPresetName([mk('Brown 1'), mk('Pink 1.5'), mk('Pink x'), mk('Pink 1 b')], 'Pink')).toBe('Pink 1');
+    expect(
+      nextPresetName([mk('Brown 1'), mk('Pink 1.5'), mk('Pink x'), mk('Pink 1 b')], 'Pink'),
+    ).toBe('Pink 1');
   });
 });
 
@@ -50,8 +57,12 @@ describe('addPreset / removePreset', () => {
   });
   it('returns null at cap or for invalid name', () => {
     const full = Array.from({ length: MAX_PRESETS }, (_, i) => mk(`P ${i}`));
-    expect(addPreset(full, { name: 'n', type: 'pink', options: OPTION_DEFAULTS }, () => 'z')).toBeNull();
-    expect(addPreset([], { name: '  ', type: 'pink', options: OPTION_DEFAULTS }, () => 'z')).toBeNull();
+    expect(
+      addPreset(full, { name: 'n', type: 'pink', options: OPTION_DEFAULTS }, () => 'z'),
+    ).toBeNull();
+    expect(
+      addPreset([], { name: '  ', type: 'pink', options: OPTION_DEFAULTS }, () => 'z'),
+    ).toBeNull();
   });
   it('removes by id without mutating', () => {
     const list = [mk('a'), mk('b')];
@@ -76,7 +87,11 @@ describe('optionsOf', () => {
 describe('findActivePreset', () => {
   it('matches after add and returns null on any difference', () => {
     const options = { ...OPTION_DEFAULTS, tilt: 4 };
-    const list = addPreset([mk('other', 'o', 'white')], { name: 'm', type: 'pink', options }, () => 'm1')!;
+    const list = addPreset(
+      [mk('other', 'o', 'white')],
+      { name: 'm', type: 'pink', options },
+      () => 'm1',
+    )!;
     expect(findActivePreset(list, 'pink', options)).toBe('m1');
     expect(findActivePreset(list, 'pink', { ...options, orangeTune: 441 })).toBeNull();
     expect(findActivePreset(list, 'brown', options)).toBeNull();

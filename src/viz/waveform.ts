@@ -62,7 +62,13 @@ export function idealPath(info: NoiseInfo, o: SoundOptions): string {
 
 /** Filled area between the midline and the ideal curve (no measurement available). */
 export function idealArea(info: NoiseInfo, o: SoundOptions): string {
-  return 'M0 80 ' + idealPoints(info, o).map((p) => 'L' + pt(p)).join(' ') + ' L600 80 Z';
+  return (
+    'M0 80 ' +
+    idealPoints(info, o)
+      .map((p) => 'L' + pt(p))
+      .join(' ') +
+    ' L600 80 Z'
+  );
 }
 
 /** Measured band levels (dB), offset to the ideal curve's average, as a line and a delta area. */
@@ -81,6 +87,7 @@ export function measuredPaths(
   const x1 = pts[pts.length - 1]?.[0] ?? 600;
   return {
     line: poly(pts),
-    area: `M${x0.toFixed(1)} 80 ` + pts.map((p) => 'L' + pt(p)).join(' ') + ` L${x1.toFixed(1)} 80 Z`,
+    area:
+      `M${x0.toFixed(1)} 80 ` + pts.map((p) => 'L' + pt(p)).join(' ') + ` L${x1.toFixed(1)} 80 Z`,
   };
 }

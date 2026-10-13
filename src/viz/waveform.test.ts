@@ -31,7 +31,11 @@ describe('waveform', () => {
     expect(idealArea(getNoise('white'), OPTION_DEFAULTS)).toMatch(/^M0 80 .* L600 80 Z$/);
   });
   it('measured paths', () => {
-    const { line, area } = measuredPaths(BANDS.map(() => -20), getNoise('white'), OPTION_DEFAULTS);
+    const { line, area } = measuredPaths(
+      BANDS.map(() => -20),
+      getNoise('white'),
+      OPTION_DEFAULTS,
+    );
     expect(line.startsWith('M')).toBe(true);
     expect(area.endsWith('Z')).toBe(true);
     expect(new Set(ys(line)).size).toBe(1);

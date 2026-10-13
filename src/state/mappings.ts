@@ -39,7 +39,8 @@ export const widthText = (w: number): string => (w === 0 ? 'Mono' : w === 100 ? 
 export const tiltText = (t: number): string =>
   t === 0 ? 'Neutral' : t > 0 ? `+${t} dB brighter` : `${-t} dB warmer`;
 export const lowCutText = (hz: number): string => (hz <= 21 ? 'Off' : `${Math.round(hz)} Hz`);
-export const highCutText = (hz: number): string => (hz >= 19900 ? 'Off' : `${(hz / 1000).toFixed(1)} kHz`);
+export const highCutText = (hz: number): string =>
+  hz >= 19900 ? 'Off' : `${(hz / 1000).toFixed(1)} kHz`;
 export const waveDepthText = (d: number): string => (d === 0 ? 'Off' : `${d}%`);
 export const wavePeriodText = (p: number): string => `${p} s per wave`;
 export const brownCornerText = (hz: number): string => `levels off at ${Math.round(hz)} Hz`;
@@ -49,7 +50,8 @@ export const greyStrengthText = (g: number): string => (g === 0 ? 'Off (white)' 
 export const orangeQText = (q: number): string =>
   q >= 45 ? 'Very narrow' : q >= 25 ? 'Narrow' : q >= 12 ? 'Medium' : 'Wide';
 export const orangeTuneText = (hz: number): string => `A = ${hz} Hz`;
-export const volumeText = (s: Settings): string => (s.muted ? `Muted (${s.volume}%)` : `${s.volume}%`);
+export const volumeText = (s: Settings): string =>
+  s.muted ? `Muted (${s.volume}%)` : `${s.volume}%`;
 export const volumeShort = (s: Settings): string => (s.muted ? 'Muted' : `${s.volume}%`);
 
 export function statusText(playing: boolean, s: Settings, timerLabel: string | null): string {
@@ -63,7 +65,12 @@ export function statusColor(playing: boolean, s: Settings): string {
   return effectiveVolume(s) === 0 ? '#EBC66A' : '#74D69A';
 }
 
-export function changeFlags(s: Settings): { char: boolean; tone: boolean; space: boolean; waves: boolean } {
+export function changeFlags(s: Settings): {
+  char: boolean;
+  tone: boolean;
+  space: boolean;
+  waves: boolean;
+} {
   return {
     char: colorKeysFor(s.type).some((k) => s[k] !== OPTION_DEFAULTS[k]),
     tone: s.tilt !== OPTION_DEFAULTS.tilt || s.lowCut > 21 || s.highCut < 19900,
@@ -74,7 +81,14 @@ export function changeFlags(s: Settings): { char: boolean; tone: boolean; space:
 
 export function changedCount(s: Settings): number {
   const colorKeys = new Set<string>(colorKeysFor(s.type));
-  const allColorKeys = new Set<string>(['brownCorner', 'greenCenter', 'greenWidth', 'greyStrength', 'orangeQ', 'orangeTune']);
+  const allColorKeys = new Set<string>([
+    'brownCorner',
+    'greenCenter',
+    'greenWidth',
+    'greyStrength',
+    'orangeQ',
+    'orangeTune',
+  ]);
   let n = 0;
   for (const k of Object.keys(OPTION_DEFAULTS) as (keyof typeof OPTION_DEFAULTS)[]) {
     if (allColorKeys.has(k) && !colorKeys.has(k)) continue;
