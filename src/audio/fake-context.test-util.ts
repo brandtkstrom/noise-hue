@@ -131,27 +131,6 @@ export class FakePanner extends FakeNode {
   }
 }
 
-export class FakeAnalyser extends FakeNode {
-  fftSize = 2048;
-  smoothingTimeConstant = 0.8;
-  /** Value every time-domain sample reads as. */
-  timeValue = 0;
-  /** Value every frequency bin reads as (dB). */
-  freqDb = -60;
-  constructor() {
-    super('analyser');
-  }
-  get frequencyBinCount(): number {
-    return this.fftSize / 2;
-  }
-  getFloatTimeDomainData(out: Float32Array): void {
-    out.fill(this.timeValue);
-  }
-  getFloatFrequencyData(out: Float32Array): void {
-    out.fill(this.freqDb);
-  }
-}
-
 export class FakeAudioContext {
   currentTime = 0;
   sampleRate: number;
@@ -162,7 +141,6 @@ export class FakeAudioContext {
   closeCalls = 0;
   gains: FakeGain[] = [];
   sources: FakeSource[] = [];
-  analysers: FakeAnalyser[] = [];
   panners: FakePanner[] = [];
 
   constructor(sampleRate = 4000) {
@@ -215,11 +193,6 @@ export class FakeAudioContext {
     this.panners.push(p);
     return p;
   };
-  createAnalyser(): FakeAnalyser {
-    const a = new FakeAnalyser();
-    this.analysers.push(a);
-    return a;
-  }
 }
 
 /** A factory for NoiseEngine plus access to the contexts it created. */

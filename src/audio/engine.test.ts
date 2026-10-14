@@ -6,13 +6,6 @@ import { FakeAudioContext, FakeGain, fakeFactory } from './fake-context.test-uti
 
 const O: SoundOptions = { ...OPTION_DEFAULTS };
 
-function timerGainOf(c: FakeAudioContext): FakeGain {
-  const panner = c.panners[0]!;
-  const g = c.gains.find((n) => n.connections.includes(panner));
-  if (!g) throw new Error('timerGain not found');
-  return g;
-}
-
 function masterOf(c: FakeAudioContext): FakeGain {
   // source → voice gain → master
   const voiceGain = c.sources[0]!.connections[0] as FakeGain;
@@ -75,7 +68,6 @@ describe('NoiseEngine', () => {
     expect(src.buffer!.getChannelData(0)[100]).not.toBe(src.buffer!.getChannelData(1)[100]);
     const ev = masterOf(c).gain.events.at(-1)!;
     expect(ev).toMatchObject({ kind: 'setTargetAtTime', value: 0.5, tc: 0.08 });
-    expect(c.analysers[0]!.fftSize).toBe(8192);
   });
 
   it('rapid switchTo keeps at most two live sources', async () => {
@@ -136,7 +128,6 @@ describe('NoiseEngine', () => {
     vi.advanceTimersByTime(1);
     expect(c.sources[0]!.stopped).toBe(true);
     expect(c.suspendCalls).toBe(1);
-    expect(e.readWaveform(64)).toBeNull();
   });
 
   it('play during the pause tail keeps the voice and does not suspend', async () => {
@@ -151,58 +142,6 @@ describe('NoiseEngine', () => {
     expect(c.sources).toHaveLength(1);
     expect(c.sources[0]!.stopped).toBe(false);
     expect(c.suspendCalls).toBe(0);
-  });
-
-  it('fadeOut ramps timerGain to 0 and resolves done', async () => {
-    const { factory, contexts } = fakeFactory();
-    const e = new NoiseEngine(factory);
-    await e.play('white', O, 0.5);
-    const c = contexts[0]!;
-    c.currentTime = 10;
-    const p = e.fadeOut(60);
-    const tg = timerGainOf(c);
-    expect(tg.gain.events.at(-1)).toEqual({ kind: 'linearRampToValueAtTime', value: 0, time: 70 });
-    vi.advanceTimersByTime(60000);
-    await expect(p).resolves.toBe('done');
-  });
-
-  it('fadeOut is cancelled by play', async () => {
-    const { factory, contexts } = fakeFactory();
-    const e = new NoiseEngine(factory);
-    await e.play('white', O, 0.5);
-    const p = e.fadeOut(60);
-    e.pause();
-    await e.play('white', O, 0.5);
-    await expect(p).resolves.toBe('cancelled');
-    expect(timerGainOf(contexts[0]!).gain.last).toBe(1);
-  });
-
-  it('cancelFade resolves the pending fade cancelled and restores timerGain to 1', async () => {
-    const { factory, contexts } = fakeFactory();
-    const e = new NoiseEngine(factory);
-    await e.play('white', O, 0.5);
-    const p = e.fadeOut(60);
-    e.cancelFade();
-    await expect(p).resolves.toBe('cancelled');
-    expect(timerGainOf(contexts[0]!).gain.last).toBe(1);
-    expect(e.playing).toBe(true);
-    vi.advanceTimersByTime(60000);
-  });
-
-  it('cancelFade is a no-op without a graph', () => {
-    const { factory } = fakeFactory();
-    expect(() => new NoiseEngine(factory).cancelFade()).not.toThrow();
-  });
-
-  it('a second fadeOut cancels the first', async () => {
-    const { factory } = fakeFactory();
-    const e = new NoiseEngine(factory);
-    await e.play('white', O, 0.5);
-    const p1 = e.fadeOut(60);
-    const p2 = e.fadeOut(5);
-    await expect(p1).resolves.toBe('cancelled');
-    vi.advanceTimersByTime(5000);
-    await expect(p2).resolves.toBe('done');
   });
 
   it('regenerate is debounced 250 ms and a no-op when not playing', async () => {
@@ -251,38 +190,7 @@ describe('NoiseEngine', () => {
     e.applyOptions({ ...O, pan: 50 });
     const c = contexts[0]!;
     expect(c.panners).toHaveLength(0);
-    expect(c.gains.some((g) => g.connections.includes(c.analysers[0]!))).toBe(true);
-  });
-
-  it('readWaveform decimates the analyser window', async () => {
-    const { factory, contexts } = fakeFactory();
-    const e = new NoiseEngine(factory);
-    expect(e.readWaveform(64)).toBeNull();
-    await e.play('white', O, 0.5);
-    const a = contexts[0]!.analysers[0]!;
-    a.timeValue = 0.1;
-    const pts = e.readWaveform(64)!;
-    expect(pts).toHaveLength(64);
-    expect(pts[0]).toBeCloseTo(0.1, 6);
-  });
-
-  it('measureBands averages bin power per band in dB, smoothed', async () => {
-    const { factory, contexts } = fakeFactory();
-    const e = new NoiseEngine(factory);
-    const bands = [
-      { lo: 100, hi: 200 },
-      { lo: 1000, hi: 1500 },
-    ];
-    expect(e.measureBands(bands)).toBeNull();
-    await e.play('white', O, 0.5);
-    const a = contexts[0]!.analysers[0]!;
-    a.freqDb = -30;
-    const first = e.measureBands(bands)!;
-    expect(first[0]).toBeCloseTo(-30, 6);
-    expect(first[1]).toBeCloseTo(-30, 6);
-    a.freqDb = -40;
-    const second = e.measureBands(bands)!;
-    expect(second[0]).toBeCloseTo(-30 * 0.8 + -40 * 0.2, 6);
+    expect(c.gains.some((g) => g.connections.includes(c.destination))).toBe(true);
   });
 
   it('setLevel ramps master only while playing', async () => {
@@ -295,13 +203,11 @@ describe('NoiseEngine', () => {
     expect(m.gain.events.at(-1)).toMatchObject({ kind: 'setTargetAtTime', value: 0.2, tc: 0.05 });
   });
 
-  it('dispose closes the context and cancels a pending fade', async () => {
+  it('dispose closes the context and stops playback', async () => {
     const { factory, contexts } = fakeFactory();
     const e = new NoiseEngine(factory);
     await e.play('white', O, 0.5);
-    const p = e.fadeOut(30);
     e.dispose();
-    await expect(p).resolves.toBe('cancelled');
     expect(contexts[0]!.closeCalls).toBe(1);
     expect(e.playing).toBe(false);
   });
