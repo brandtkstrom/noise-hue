@@ -93,6 +93,10 @@ describe('mountImmersive', () => {
     try {
       el('#fullscreen').click();
       expect(request).toHaveBeenCalledTimes(1);
+      // the request resolves while still immersive: browser fullscreen is kept
+      await new Promise((r) => setTimeout(r, 0));
+      expect(app.get().immersive).toBe(true);
+      expect(exit).not.toHaveBeenCalled();
       key(el('#exit-overlay'), 'Escape');
       expect(exit).toHaveBeenCalledTimes(1);
     } finally {
@@ -122,6 +126,41 @@ describe('mountImmersive', () => {
     document.dispatchEvent(new Event('fullscreenchange'));
     expect(app.get().immersive).toBe(false);
     expect(isHidden('#exit-overlay')).toBe(true);
+  });
+
+  it('exits browser fullscreen when immersive ends before the request resolves', async () => {
+    const root = document.documentElement;
+    let fsEl: Element | null = null;
+    let resolveRequest!: () => void;
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => fsEl });
+    Object.defineProperty(root, 'requestFullscreen', {
+      configurable: true,
+      value: () =>
+        new Promise<void>((resolve) => {
+          resolveRequest = () => {
+            fsEl = root;
+            resolve();
+          };
+        }),
+    });
+    const exit = vi.fn(() => {
+      fsEl = null;
+      return Promise.resolve();
+    });
+    Object.defineProperty(document, 'exitFullscreen', { configurable: true, value: exit });
+    try {
+      el('#fullscreen').click();
+      key(el('#exit-overlay'), 'x');
+      expect(exit).not.toHaveBeenCalled(); // the browser request hasn't completed yet
+      resolveRequest();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(exit).toHaveBeenCalledTimes(1); // the late fullscreen is left again
+      expect(app.get().immersive).toBe(false);
+    } finally {
+      delete (document as { fullscreenElement?: unknown }).fullscreenElement;
+      delete (root as { requestFullscreen?: unknown }).requestFullscreen;
+      delete (document as { exitFullscreen?: unknown }).exitFullscreen;
+    }
   });
 
   it('is-audible only while immersive, playing and audible', () => {

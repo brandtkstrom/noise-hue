@@ -24,6 +24,17 @@ export function mountImmersive(settings: Store<Settings>, app: Store<AppState>):
     exitImmersive();
   }
 
+  /** Leaves browser fullscreen if we're in it; refusal and unsupported browsers are ignored. */
+  function leaveBrowserFullscreen(): void {
+    try {
+      if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   function enterImmersive(): void {
     app.set({ immersive: true });
     document.addEventListener('keydown', onImmersiveKey);
@@ -32,7 +43,13 @@ export function mountImmersive(settings: Store<Settings>, app: Store<AppState>):
     try {
       const root = document.documentElement;
       if (typeof root.requestFullscreen === 'function' && !document.fullscreenElement) {
-        root.requestFullscreen().catch(() => {});
+        root
+          .requestFullscreen()
+          .then(() => {
+            // exited while the request was in flight: don't leave the user in fullscreen
+            if (!app.get().immersive) leaveBrowserFullscreen();
+          })
+          .catch(() => {});
       }
     } catch {
       // best effort: immersive mode works without browser fullscreen
@@ -44,13 +61,7 @@ export function mountImmersive(settings: Store<Settings>, app: Store<AppState>):
     app.set({ immersive: false });
     document.removeEventListener('keydown', onImmersiveKey);
     setHidden(overlay, true);
-    try {
-      if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
-        document.exitFullscreen().catch(() => {});
-      }
-    } catch {
-      // ignore
-    }
+    leaveBrowserFullscreen();
     fsBtn.focus({ preventScroll: true });
   }
 
