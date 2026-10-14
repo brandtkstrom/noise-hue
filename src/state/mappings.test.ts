@@ -3,8 +3,7 @@ import { DEFAULT_SETTINGS } from './defaults';
 import {
   brownCorner,
   brownCornerText,
-  changeFlags,
-  changedCount,
+  changeSummary,
   effectiveVolume,
   greenCenter,
   greenCenterText,
@@ -114,23 +113,30 @@ describe('status', () => {
 
 describe('changes', () => {
   it('counts only the current color keys plus shared options', () => {
-    expect(changedCount(DEFAULT_SETTINGS)).toBe(0);
-    expect(changedCount({ ...DEFAULT_SETTINGS, type: 'blue', greenCenter: 800 })).toBe(0);
-    expect(changedCount({ ...DEFAULT_SETTINGS, type: 'green', greenCenter: 800 })).toBe(1);
-    expect(changedCount({ ...DEFAULT_SETTINGS, pan: 10, tilt: 2 })).toBe(2);
+    expect(changeSummary(DEFAULT_SETTINGS).count).toBe(0);
+    expect(changeSummary({ ...DEFAULT_SETTINGS, type: 'blue', greenCenter: 800 }).count).toBe(0);
+    expect(changeSummary({ ...DEFAULT_SETTINGS, type: 'green', greenCenter: 800 }).count).toBe(1);
+    expect(changeSummary({ ...DEFAULT_SETTINGS, pan: 10, tilt: 2 }).count).toBe(2);
   });
   it('computes group flags', () => {
-    expect(changeFlags(DEFAULT_SETTINGS)).toEqual({
+    expect(changeSummary(DEFAULT_SETTINGS)).toEqual({
       char: false,
       tone: false,
       space: false,
       waves: false,
+      count: 0,
     });
-    expect(changeFlags({ ...DEFAULT_SETTINGS, type: 'green', greenWidth: 1 }).char).toBe(true);
-    expect(changeFlags({ ...DEFAULT_SETTINGS, type: 'blue', greenWidth: 1 }).char).toBe(false);
-    expect(changeFlags({ ...DEFAULT_SETTINGS, highCut: 8000 }).tone).toBe(true);
-    expect(changeFlags({ ...DEFAULT_SETTINGS, lowCut: 21 }).tone).toBe(false);
-    expect(changeFlags({ ...DEFAULT_SETTINGS, pan: -5 }).space).toBe(true);
-    expect(changeFlags({ ...DEFAULT_SETTINGS, wavePeriod: 10 }).waves).toBe(true);
+    expect(changeSummary({ ...DEFAULT_SETTINGS, type: 'green', greenWidth: 1 }).char).toBe(true);
+    expect(changeSummary({ ...DEFAULT_SETTINGS, type: 'blue', greenWidth: 1 }).char).toBe(false);
+    expect(changeSummary({ ...DEFAULT_SETTINGS, highCut: 8000 }).tone).toBe(true);
+    expect(changeSummary({ ...DEFAULT_SETTINGS, pan: -5 }).space).toBe(true);
+    expect(changeSummary({ ...DEFAULT_SETTINGS, wavePeriod: 10 }).waves).toBe(true);
+  });
+  it('treats values that display as Off as unchanged in both flag and count', () => {
+    const off = changeSummary({ ...DEFAULT_SETTINGS, lowCut: 21, highCut: 19900 });
+    expect(off.tone).toBe(false);
+    expect(off.count).toBe(0);
+    expect(changeSummary({ ...DEFAULT_SETTINGS, lowCut: 22 }).count).toBe(1);
+    expect(changeSummary({ ...DEFAULT_SETTINGS, highCut: 19899 }).count).toBe(1);
   });
 });

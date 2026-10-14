@@ -109,7 +109,7 @@ describe('mountSound', () => {
     expect(el('#pan-text').textContent).toBe('L 4');
   });
 
-  it('changed dots follow changeFlags and the fold summary counts changes', () => {
+  it('changed dots and the fold summary follow the change summary', () => {
     expect(dotHidden('#grp-tone')).toBe(true);
     expect(el('#fold-right-summary').textContent).toBe('Defaults');
     slide('#tilt', 2);

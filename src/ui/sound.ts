@@ -103,15 +103,14 @@ export function mountSound(settings: Store<Settings>): void {
     if (hasColorOpts) setText(grpColorTitle, `${getNoise(s.type).name} settings`);
     for (const b of blocks) setHidden(b.el, b.id !== s.type);
 
-    const flags = m.changeFlags(s);
-    setHidden(dots.char, !flags.char);
-    setHidden(dots.tone, !flags.tone);
-    setHidden(dots.space, !flags.space);
-    setHidden(dots.waves, !flags.waves);
+    const changes = m.changeSummary(s);
+    setHidden(dots.char, !changes.char);
+    setHidden(dots.tone, !changes.tone);
+    setHidden(dots.space, !changes.space);
+    setHidden(dots.waves, !changes.waves);
 
     toggleClass(wavePeriodField, 'is-dim', s.waveDepth === 0);
-    const n = m.changedCount(s);
-    setText(summary, n === 0 ? 'Defaults' : `${n} changed`);
+    setText(summary, changes.count === 0 ? 'Defaults' : `${changes.count} changed`);
   };
 
   settings.subscribe((s) => render(s));
