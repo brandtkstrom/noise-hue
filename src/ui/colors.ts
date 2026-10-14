@@ -1,9 +1,13 @@
-import { getNoise } from '../noise/catalog';
+import { getNoise, NOISE_TYPES } from '../noise/catalog';
 import type { Store } from '../state/store';
 import type { NoiseId, Settings } from '../types';
-import { $, setAttr, setText, setVar } from './dom';
+import { $, setAttr, setText, setVar, toggleClass } from './dom';
 
-/** Color chips: selection, the runtime accent, the selection line and the description. */
+/**
+ * Color chips: selection, the runtime accent, the selection line and the description.
+ * Every description is rendered into the same grid cell (only the active one is
+ * visible), so the slot height never changes and the player never shifts.
+ */
 export function mountColors(settings: Store<Settings>): void {
   const root = $('#app');
   const selName = $('#sel-name');
@@ -22,13 +26,21 @@ export function mountColors(settings: Store<Settings>): void {
     return { id, el };
   });
 
+  const descItems = NOISE_TYPES.map((noise) => {
+    const el = document.createElement('p');
+    el.className = 'desc-item';
+    el.textContent = noise.desc;
+    desc.append(el);
+    return { id: noise.id, el };
+  });
+
   const render = (): void => {
     const current = getNoise(settings.get().type);
     for (const b of buttons) setAttr(b.el, 'aria-pressed', String(b.id === current.id));
+    for (const d of descItems) toggleClass(d.el, 'is-active', d.id === current.id);
     setVar(root, '--accent', current.color);
     setText(selName, `${current.name} noise`);
     setText(selSlope, current.slope);
-    setText(desc, current.desc);
   };
 
   settings.subscribe(render);

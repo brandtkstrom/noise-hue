@@ -14,6 +14,7 @@ const el = (sel: string): HTMLElement => {
   return found;
 };
 const btn = (id: NoiseId): HTMLElement => el(`.color-btn[data-type="${id}"]`);
+const activeDesc = (): HTMLElement => el('#desc .desc-item.is-active');
 
 let settings: Store<Settings>;
 
@@ -45,10 +46,24 @@ describe('mountColors', () => {
 
   it('sets --accent, selection line and description from the current color', () => {
     expect(el('#app').style.getPropertyValue('--accent')).toBe('#E8E6E3');
+    expect(el('#sel-name').textContent).toBe('White noise');
+    expect(activeDesc().textContent).toMatch(/^Equal energy at every frequency/);
     settings.set({ type: 'pink' });
     expect(el('#app').style.getPropertyValue('--accent')).toBe('#F2A7C3');
     expect(el('#sel-name').textContent).toBe('Pink noise');
     expect(el('#sel-slope').textContent).toBe('−3 dB/oct');
-    expect(el('#desc').textContent).toMatch(/^Softer highs/);
+    expect(activeDesc().textContent).toMatch(/^Softer highs/);
+  });
+
+  it('keeps every description in the slot with exactly one active', () => {
+    const items = document.querySelectorAll('#desc .desc-item');
+    expect(items).toHaveLength(8);
+    expect(document.querySelectorAll('#desc .desc-item.is-active')).toHaveLength(1);
+    btn('green').click();
+    const active = document.querySelectorAll('#desc .desc-item.is-active');
+    expect(active).toHaveLength(1);
+    expect(active[0]?.textContent).toMatch(/^Centered on the middle frequencies/);
+    // inactive descriptions stay in the DOM so the slot keeps the tallest height
+    expect(items).toHaveLength(8);
   });
 });

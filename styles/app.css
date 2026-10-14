@@ -186,11 +186,23 @@ summary:focus-visible {
 
 /* ───────── Description ───────── */
 
+/* Every color's description shares one grid cell, so the slot is always as tall
+   as the tallest one and the player below never moves when the text changes. */
 .desc {
-  margin: 0;
+  display: grid;
   color: var(--text-2);
   font-size: 0.9375rem;
   line-height: 1.5;
+}
+
+.desc-item {
+  grid-area: 1 / 1;
+  margin: 0;
+  visibility: hidden;
+}
+
+.desc-item.is-active {
+  visibility: visible;
 }
 
 /* ───────── Player ───────── */
