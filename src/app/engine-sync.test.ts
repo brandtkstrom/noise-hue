@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS } from '../state/defaults';
-import { volumeGain } from '../state/mappings';
-import { optionsOf } from '../state/presets';
+import { optionsOf, volumeGain } from '../state/mappings';
 import { createStore } from '../state/store';
 import type { Settings } from '../types';
 import { bindEngine, syncEngine, type SyncPort } from './engine-sync';
@@ -79,7 +78,7 @@ describe('syncEngine', () => {
     expect(e.applyOptions).not.toHaveBeenCalled();
   });
 
-  it('a preset apply (type + options at once) applies options and switches to the new color', () => {
+  it('a color + options change at once applies options and switches to the new color', () => {
     const e = stub(true);
     const next = withPatch({ type: 'green', greenCenter: 800, tilt: -2 });
     syncEngine(e, next, base);

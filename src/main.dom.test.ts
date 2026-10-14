@@ -10,8 +10,6 @@ let visibility: DocumentVisibilityState = 'visible';
 beforeEach(() => {
   vi.resetModules();
   vi.useFakeTimers();
-  vi.stubGlobal('requestAnimationFrame', () => 0);
-  vi.stubGlobal('cancelAnimationFrame', () => {});
   localStorage.clear();
   document.body.innerHTML = bodyHtml;
   visibility = 'visible';
@@ -61,7 +59,7 @@ describe('main: no Web Audio', () => {
     vi.stubGlobal('webkitAudioContext', undefined);
     await import('./main');
     expect(document.querySelector<HTMLElement>('#unsupported')?.hidden).toBe(false);
-    for (const sel of ['#play', '#timer-btn', '#mute', '#vol']) {
+    for (const sel of ['#play', '#mute', '#vol']) {
       expect(isDisabled(sel)).toBe(true);
     }
   });
@@ -72,7 +70,7 @@ describe('main: Web Audio available', () => {
     vi.stubGlobal('AudioContext', FakeAudioContext);
     await import('./main');
     expect(document.querySelector<HTMLElement>('#unsupported')?.hidden).toBe(true);
-    for (const sel of ['#play', '#timer-btn', '#mute', '#vol']) {
+    for (const sel of ['#play', '#mute', '#vol']) {
       expect(isDisabled(sel)).toBe(false);
     }
     document.querySelector<HTMLButtonElement>('#play')?.click();

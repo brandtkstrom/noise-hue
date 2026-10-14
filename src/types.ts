@@ -22,20 +22,5 @@ export interface Settings extends SoundOptions {
   muted: boolean;
 }
 
-export interface UiPrefs {
-  pinLeft: boolean;
-  pinRight: boolean;
-  foldLeft: boolean;
-  foldRight: boolean;
-  sleepMinutes: number;
-}
-
-export interface Preset {
-  id: string;
-  name: string;
-  type: NoiseId;
-  options: SoundOptions;
-}
-
 export type ColorOptionKey =
   'brownCorner' | 'greenCenter' | 'greenWidth' | 'greyStrength' | 'orangeQ' | 'orangeTune';

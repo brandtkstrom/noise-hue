@@ -1,5 +1,5 @@
 import { CONFIG } from '../config';
-import type { Settings, SoundOptions, UiPrefs } from '../types';
+import type { Settings, SoundOptions } from '../types';
 
 export const OPTION_DEFAULTS: SoundOptions = {
   tilt: 0,
@@ -17,7 +17,7 @@ export const OPTION_DEFAULTS: SoundOptions = {
   orangeTune: 440,
 };
 
-/** Every option key, in defaults order (validation, preset match and change summary derive from it). */
+/** Every option key, in defaults order (validation and the sound options derive from it). */
 export const OPTION_KEYS = Object.keys(OPTION_DEFAULTS) as (keyof SoundOptions)[];
 
 export const OPTION_LIMITS: Record<keyof SoundOptions, [number, number]> = {
@@ -37,7 +37,6 @@ export const OPTION_LIMITS: Record<keyof SoundOptions, [number, number]> = {
 };
 
 export const VOLUME_LIMITS: [number, number] = [0, 100];
-export const SLEEP_MINUTES_LIMITS: [number, number] = [1, 480];
 
 export const DEFAULT_SETTINGS: Settings = {
   ...OPTION_DEFAULTS,
@@ -45,14 +44,3 @@ export const DEFAULT_SETTINGS: Settings = {
   volume: CONFIG.defaultVolume,
   muted: false,
 };
-
-export const DEFAULT_UI: UiPrefs = {
-  pinLeft: true,
-  pinRight: true,
-  foldLeft: false,
-  foldRight: false,
-  sleepMinutes: 30,
-};
-
-export const MAX_PRESETS = 20;
-export const MAX_PRESET_NAME = 32;

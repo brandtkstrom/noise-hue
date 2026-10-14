@@ -29,8 +29,6 @@ function setup(patch: Partial<Settings> = {}): void {
   mountSound(settings);
 }
 
-const dotHidden = (grp: string): boolean => el(`${grp} .changed-dot`).hasAttribute('hidden');
-
 describe('mountSound', () => {
   beforeEach(() => setup());
 
@@ -39,14 +37,6 @@ describe('mountSound', () => {
     expect(settings.get().tilt).toBe(6);
     expect(el('#tilt-text').textContent).toBe('+6 dB brighter');
     expect(input('#tilt').getAttribute('aria-valuetext')).toBe('+6 dB brighter');
-  });
-
-  it('double-click resets that field to its default', () => {
-    slide('#tilt', 6);
-    input('#tilt').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    expect(settings.get().tilt).toBe(0);
-    expect(input('#tilt').value).toBe('0');
-    expect(el('#tilt-text').textContent).toBe('Neutral');
   });
 
   it('Reset keeps the type, sets volume 50, unmutes and restores every option', () => {
@@ -109,19 +99,6 @@ describe('mountSound', () => {
     expect(el('#pan-text').textContent).toBe('L 4');
   });
 
-  it('changed dots and the fold summary follow the change summary', () => {
-    expect(dotHidden('#grp-tone')).toBe(true);
-    expect(el('#fold-right-summary').textContent).toBe('Defaults');
-    slide('#tilt', 2);
-    expect(dotHidden('#grp-tone')).toBe(false);
-    expect(dotHidden('#grp-space')).toBe(true);
-    slide('#width', 50);
-    expect(dotHidden('#grp-space')).toBe(false);
-    expect(el('#fold-right-summary').textContent).toBe('2 changed');
-    slide('#wavedepth', 30);
-    expect(dotHidden('#grp-waves')).toBe(false);
-  });
-
   it('dims Wave length while wave depth is 0', () => {
     expect(el('#field-waveperiod').classList.contains('is-dim')).toBe(true);
     slide('#wavedepth', 20);
@@ -139,10 +116,8 @@ describe('mountSound', () => {
     expect(el('#opts-brown').hidden).toBe(true);
     expect(el('#opts-grey').hidden).toBe(true);
     expect(el('#opts-orange').hidden).toBe(true);
-    expect(dotHidden('#grp-color')).toBe(true);
     slide('#greencenter', 0);
     expect(settings.get().greenCenter).toBe(200);
-    expect(dotHidden('#grp-color')).toBe(false);
     settings.set({ type: 'pink' });
     expect(el('#grp-color').hidden).toBe(true);
   });
