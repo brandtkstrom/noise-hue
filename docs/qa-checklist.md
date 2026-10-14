@@ -39,6 +39,7 @@ Run against `npm run build && npm run preview` (or `npm run dev`). Spec: [§9 Te
 - [ ] Every slider updates its value text live and the sound in real time.
 - [ ] Double-clicking a slider restores its default.
 - [ ] Changed-dots appear on groups with non-default values; Reset restores volume and options but keeps the color.
+- [ ] Low cut at Off (20–21 Hz) doesn't light the Tone dot or count in "N changed" (intentional divergence from the prototype, which counted 21 Hz as changed; the same rule applies to High cut values shown as Off).
 - [ ] Wave length is dimmed while Wave depth is Off.
 - [ ] Color settings group appears only for Brown, Green, Grey and Orange; dragging those sliders regenerates the sound shortly after (no glitch while dragging).
 
