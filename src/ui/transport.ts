@@ -13,7 +13,7 @@ import type { Store } from '../state/store';
 import type { SleepTimer } from '../state/timer';
 import type { Settings, UiPrefs } from '../types';
 import type { AppState } from './app-state';
-import { $, setAttr, setText, toggleClass } from './dom';
+import { $, setAttr, setHidden, setText, toggleClass } from './dom';
 import { mountTimerPopover } from './timer-popover';
 
 export type EnginePort = Pick<
@@ -21,13 +21,8 @@ export type EnginePort = Pick<
   'play' | 'pause' | 'setLevel' | 'fadeOut' | 'cancelFade' | 'playing'
 >;
 
-const setHidden = (el: Element, hidden: boolean): void => setAttr(el, 'hidden', hidden ? '' : null);
-
-/** Keys that move focus or are modifiers; every other key while immersive exits. */
-const PASS_KEYS = new Set(['Tab', 'Shift', 'Meta', 'Control', 'Alt']);
-
 /**
- * Playback bar: play/pause, mute + volume, compare, sleep timer, fullscreen and status.
+ * Playback bar: play/pause, mute + volume, compare, sleep timer and status.
  * The engine level is not set here (main subscribes the engine to settings).
  */
 export function mountTransport(deps: {
@@ -38,7 +33,6 @@ export function mountTransport(deps: {
   timer: SleepTimer;
 }): { tick(): void } {
   const { settings, ui, app, engine, timer } = deps;
-  const appEl = $('#app');
   const playBtn = $('#play');
   const iconPlay = $('.icon-play', playBtn);
   const iconPause = $('.icon-pause', playBtn);
@@ -53,8 +47,6 @@ export function mountTransport(deps: {
   const readout = $('#vol-readout');
   const compareBtn = $('#compare');
   const vizBtn = $('#viz-btn');
-  const fsBtn = $('#fullscreen');
-  const overlay = $('#exit-overlay');
   const unsupported = $('#unsupported');
 
   const popover = mountTimerPopover({
@@ -122,50 +114,6 @@ export function mountTransport(deps: {
   compareBtn.addEventListener('click', toggleCompare);
   vizBtn.addEventListener('click', toggleCompare);
 
-  // ── fullscreen / immersive ──
-  // on document, not the overlay: Tab may move focus off it and must not trap the user
-  function onImmersiveKey(e: KeyboardEvent): void {
-    if (PASS_KEYS.has(e.key)) return;
-    e.preventDefault();
-    exitImmersive();
-  }
-
-  function enterImmersive(): void {
-    app.set({ immersive: true });
-    document.addEventListener('keydown', onImmersiveKey);
-    setHidden(overlay, false);
-    overlay.focus({ preventScroll: true });
-    try {
-      const root = document.documentElement;
-      if (typeof root.requestFullscreen === 'function' && !document.fullscreenElement) {
-        root.requestFullscreen().catch(() => {});
-      }
-    } catch {
-      // best effort: immersive mode works without browser fullscreen
-    }
-  }
-
-  function exitImmersive(): void {
-    if (!app.get().immersive) return;
-    app.set({ immersive: false });
-    document.removeEventListener('keydown', onImmersiveKey);
-    setHidden(overlay, true);
-    try {
-      if (document.fullscreenElement && typeof document.exitFullscreen === 'function') {
-        document.exitFullscreen().catch(() => {});
-      }
-    } catch {
-      // ignore
-    }
-    fsBtn.focus({ preventScroll: true });
-  }
-
-  fsBtn.addEventListener('click', enterImmersive);
-  overlay.addEventListener('click', exitImmersive);
-  document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement) exitImmersive();
-  });
-
   // ── render ──
   function render(): void {
     const s = settings.get();
@@ -194,9 +142,6 @@ export function mountTransport(deps: {
     const cmp = a.compare ? 'true' : 'false';
     setAttr(compareBtn, 'aria-pressed', cmp);
     setAttr(vizBtn, 'aria-pressed', cmp);
-
-    toggleClass(appEl, 'is-immersive', a.immersive);
-    toggleClass(appEl, 'is-audible', a.immersive && a.playing && eff > 0);
 
     // the live region announces state changes only; the per-minute countdown is aria-hidden
     // (the timer button's label carries it for assistive tech)

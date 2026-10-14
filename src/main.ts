@@ -7,6 +7,7 @@ import type { Preset, Settings, UiPrefs } from './types';
 import { DEFAULT_APP_STATE, type AppState } from './ui/app-state';
 import { mountColors } from './ui/colors';
 import { $ } from './ui/dom';
+import { mountImmersive } from './ui/immersive';
 import { mountPanels } from './ui/panels';
 import { mountPresets } from './ui/presets';
 import { mountSound } from './ui/sound';
@@ -97,6 +98,7 @@ function main(): void {
   mountSound(settings);
   mountPresets(settings, presets, persist.savePresets);
   const transport = mountTransport({ settings, ui, app, engine: engine ?? silentEngine, timer });
+  mountImmersive(settings, app);
 
   const mql =
     typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
