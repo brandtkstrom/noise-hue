@@ -129,7 +129,14 @@
             <p id="status" class="status" data-state="paused" aria-live="polite">Paused</p>
           </div>
           <div class="vol-row">
-            <button type="button" id="mute" class="mute-btn" aria-pressed="false" aria-label="Mute" title="Mute">
+            <button
+              type="button"
+              id="mute"
+              class="mute-btn"
+              aria-pressed="false"
+              aria-label="Mute"
+              title="Mute"
+            >
               <svg
                 class="icon-vol-muted"
                 viewBox="0 0 24 24"
@@ -172,7 +179,13 @@
         <details id="options" class="options">
           <summary class="options-summary">Sound options</summary>
           <div class="options-body">
-            <div id="grp-color" class="opt-group" role="group" aria-labelledby="grp-color-title" hidden>
+            <div
+              id="grp-color"
+              class="opt-group"
+              role="group"
+              aria-labelledby="grp-color-title"
+              hidden
+            >
               <p id="grp-color-title" class="opt-title">White settings</p>
               <div id="opts-brown" class="opt-fields" hidden>
                 <div class="field">
@@ -180,7 +193,15 @@
                     <label for="browncorner">Depth</label
                     ><span id="browncorner-text" class="field-val"></span>
                   </div>
-                  <input id="browncorner" class="range" type="range" min="0" max="100" step="1" value="50" />
+                  <input
+                    id="browncorner"
+                    class="range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
                 </div>
               </div>
               <div id="opts-green" class="opt-fields" hidden>
@@ -189,14 +210,30 @@
                     <label for="greencenter">Center</label
                     ><span id="greencenter-text" class="field-val"></span>
                   </div>
-                  <input id="greencenter" class="range" type="range" min="0" max="100" step="1" value="50" />
+                  <input
+                    id="greencenter"
+                    class="range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="50"
+                  />
                 </div>
                 <div class="field">
                   <div class="field-head">
                     <label for="greenwidth">Width</label
                     ><span id="greenwidth-text" class="field-val"></span>
                   </div>
-                  <input id="greenwidth" class="range" type="range" min="10" max="30" step="1" value="20" />
+                  <input
+                    id="greenwidth"
+                    class="range"
+                    type="range"
+                    min="10"
+                    max="30"
+                    step="1"
+                    value="20"
+                  />
                 </div>
               </div>
               <div id="opts-grey" class="opt-fields" hidden>
@@ -205,7 +242,15 @@
                     <label for="greystrength">Hearing adjustment</label
                     ><span id="greystrength-text" class="field-val"></span>
                   </div>
-                  <input id="greystrength" class="range" type="range" min="0" max="100" step="1" value="100" />
+                  <input
+                    id="greystrength"
+                    class="range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="100"
+                  />
                 </div>
               </div>
               <div id="opts-orange" class="opt-fields" hidden>
@@ -214,14 +259,30 @@
                     <label for="orangeq">Gap width</label
                     ><span id="orangeq-text" class="field-val"></span>
                   </div>
-                  <input id="orangeq" class="range" type="range" min="5" max="60" step="1" value="30" />
+                  <input
+                    id="orangeq"
+                    class="range"
+                    type="range"
+                    min="5"
+                    max="60"
+                    step="1"
+                    value="30"
+                  />
                 </div>
                 <div class="field">
                   <div class="field-head">
                     <label for="orangetune">Tuning</label
                     ><span id="orangetune-text" class="field-val"></span>
                   </div>
-                  <input id="orangetune" class="range" type="range" min="415" max="466" step="1" value="440" />
+                  <input
+                    id="orangetune"
+                    class="range"
+                    type="range"
+                    min="415"
+                    max="466"
+                    step="1"
+                    value="440"
+                  />
                 </div>
               </div>
             </div>
@@ -236,15 +297,33 @@
               </div>
               <div class="field">
                 <div class="field-head">
-                  <label for="lowcut">Low cut</label><span id="lowcut-text" class="field-val"></span>
+                  <label for="lowcut">Low cut</label
+                  ><span id="lowcut-text" class="field-val"></span>
                 </div>
-                <input id="lowcut" class="range" type="range" min="0" max="100" step="1" value="0" />
+                <input
+                  id="lowcut"
+                  class="range"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="0"
+                />
               </div>
               <div class="field">
                 <div class="field-head">
-                  <label for="highcut">High cut</label><span id="highcut-text" class="field-val"></span>
+                  <label for="highcut">High cut</label
+                  ><span id="highcut-text" class="field-val"></span>
                 </div>
-                <input id="highcut" class="range" type="range" min="0" max="100" step="1" value="100" />
+                <input
+                  id="highcut"
+                  class="range"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="100"
+                />
               </div>
             </div>
 
@@ -254,7 +333,15 @@
                 <div class="field-head">
                   <label for="pan">Panning</label><span id="pan-text" class="field-val"></span>
                 </div>
-                <input id="pan" class="range" type="range" min="-100" max="100" step="1" value="0" />
+                <input
+                  id="pan"
+                  class="range"
+                  type="range"
+                  min="-100"
+                  max="100"
+                  step="1"
+                  value="0"
+                />
               </div>
               <div class="field">
                 <div class="field-head">
@@ -272,14 +359,30 @@
                   <label for="wavedepth">Wave depth</label
                   ><span id="wavedepth-text" class="field-val"></span>
                 </div>
-                <input id="wavedepth" class="range" type="range" min="0" max="100" step="1" value="0" />
+                <input
+                  id="wavedepth"
+                  class="range"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="0"
+                />
               </div>
               <div id="field-waveperiod" class="field is-dim">
                 <div class="field-head">
                   <label for="waveperiod">Wave length</label
                   ><span id="waveperiod-text" class="field-val"></span>
                 </div>
-                <input id="waveperiod" class="range" type="range" min="4" max="20" step="1" value="8" />
+                <input
+                  id="waveperiod"
+                  class="range"
+                  type="range"
+                  min="4"
+                  max="20"
+                  step="1"
+                  value="8"
+                />
               </div>
             </div>
 
