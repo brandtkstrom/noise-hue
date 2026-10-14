@@ -70,9 +70,14 @@ function sanitizePreset(raw: unknown): Preset | null {
 export function sanitizePresets(raw: unknown): Preset[] {
   if (!Array.isArray(raw)) return [];
   const out: Preset[] = [];
+  const seen = new Set<string>();
   for (const item of raw) {
     const p = sanitizePreset(item);
-    if (p) out.push(p);
+    // ids key the UI chips, so a duplicate would hide one preset and delete both
+    if (p && !seen.has(p.id)) {
+      seen.add(p.id);
+      out.push(p);
+    }
     if (out.length >= MAX_PRESETS) break;
   }
   return out;

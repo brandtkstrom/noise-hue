@@ -52,6 +52,14 @@ describe('validate', () => {
     expect(out[0]?.options.lowCut).toBe(20);
   });
 
+  it('drops presets that reuse an id', () => {
+    const dupe = { ...validPreset(0), name: 'Other' };
+    const out = sanitizePresets([validPreset(0), dupe, validPreset(1)]);
+    expect(out.map((p) => p.id)).toEqual(['p0', 'p1']);
+    // the first valid occurrence wins; the duplicate's name is discarded
+    expect(out.map((p) => p.name)).toEqual(['Preset 0', 'Preset 1']);
+  });
+
   it('keeps at most 20 presets', () => {
     const many = Array.from({ length: 25 }, (_, i) => validPreset(i));
     expect(sanitizePresets(many)).toHaveLength(MAX_PRESETS);
