@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Noise Hue: choose a noise color, shape it, and listen." />
+    <meta name="theme-color" content="#0E1116" />
+    <title>Noise Hue</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap"
+    />
+    <link rel="stylesheet" href="/styles/tokens.css" />
+    <link rel="stylesheet" href="/styles/layout.css" />
+    <link rel="stylesheet" href="/styles/components.css" />
+  </head>
+  <body>
+    <div id="app" class="app">
+      <!-- ───────── Color panel (left) ───────── -->
+      <div id="slot-left" class="slot slot-left">
+        <button type="button" id="rail-left" class="rail rail-left" aria-label="Show color panel">
+          <span class="rail-dot" aria-hidden="true"></span>
+          <span class="rail-label">Color</span>
+        </button>
+        <aside id="pane-left" class="pane pane-left" aria-label="Noise type">
+          <div class="pane-head">
+            <p class="pane-title pane-title-mono">Color</p>
+            <button
+              type="button"
+              id="fold-left"
+              class="fold-btn"
+              aria-expanded="true"
+              aria-controls="color-list"
+            >
+              <span class="sr-only fold-action">Hide color options</span>
+              <span class="fold-dot" aria-hidden="true"></span>
+              <span id="fold-left-name">White</span><span class="sr-only"> selected</span>
+              <span class="fold-hint" aria-hidden="true">· Show colors</span>
+              <svg
+                class="fold-chev"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </button>
+            <button
+              type="button"
+              id="pin-left"
+              class="pin-btn"
+              aria-pressed="true"
+              aria-label="Unpin color panel"
+              title="Unpin color panel"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 17v5"></path>
+                <path
+                  d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"
+                ></path>
+              </svg>
+            </button>
+          </div>
+          <div id="color-list" class="color-list fold-body" role="group" aria-label="Noise color">
+            <button
+              type="button"
+              class="color-btn"
+              data-type="white"
+              aria-pressed="false"
+              aria-label="White noise"
+              style="--c: #e8e6e3"
+            >
+              <span class="swatch" aria-hidden="true"></span>
+              <span class="color-text"
+                ><span class="color-name">White</span
+                ><span class="color-slope">flat · 0 dB/oct</span></span
+              >
+            </button>
+            <button
+              type="button"
+              class="color-btn"
+              data-type="grey"
+              aria-pressed="false"
+              aria-label="Grey noise"
+              style="--c: #a7afb9"
+            >
+              <span class="swatch" aria-hidden="true"></span>
+              <span class="color-text"
+                ><span class="color-name">Grey</span
+                ><span class="color-slope">flat to the ear</span></span
+              >
+            </button>
+            <button
+              type="button"
+              class="color-btn"
+              data-type="brown"
+              aria-pressed="false"
+              aria-label="Brown noise"
+              style="--c: #c49468"
+            >
+              <span class="swatch" aria-hidden="true"></span>
+              <span class="color-text"
+                ><span class="color-name">Brown</span
+                ><span class="color-slope">−6 dB/oct</span></span
+              >
+            </button>
+            <button
+              type="button"
+              class="color-btn"
+              data-type="pink"
+              aria-pressed="false"
+              aria-label="Pink noise"
+              style="--c: #f2a7c3"
+            >
+              <span class="swatch" aria-hidden="true"></span>
+              <span class="color-text"
+                ><span class="color-name">Pink</span
+                ><span class="color-slope">−3 dB/oct</span></span
+              >
+            </button>
+            <button
+              type="button"
+              class="color-btn"
+              data-type="green"
+              aria-pressed="false"
+              aria-label="Green noise"
+              style="--c: #8cc79a"
+            >
+              <span class="swatch" aria-hidden="true"></span>
+              <span class="color-text"
+                ><span class="color-name">Green</span
+                ><span class="color-slope">mid band · ~500 Hz</span></span
+              >
+            </button>
+            <button
+              type="button"
+              class="color-btn"
+              data-type="blue"
+              aria-pressed="false"
+              aria-label="Blue noise"
+              style="--c: #7fb2f0"
+            >
+              <span class="swatch" aria-hidden="true"></span>
+              <span class="color-text"
+                ><span class="color-name">Blue</span
+                ><span class="color-slope">+3 dB/oct</span></span
+              >
+            </button>
+            <button
+              type="button"
+              class="color-btn"
+              data-type="violet"
+              aria-pressed="false"
+              aria-label="Violet noise"
+              style="--c: #b49cf2"
+            >
+              <span class="swatch" aria-hidden="true"></span>
+              <span class="color-text"
+                ><span class="color-name">Violet</span
+                ><span class="color-slope">+6 dB/oct</span></span
+              >
+            </button>
+            <button
+              type="button"
+              class="color-btn"
+              data-type="orange"
+              aria-pressed="false"
+              aria-label="Orange noise"
+              style="--c: #f0a35e"
+            >
+              <span class="swatch" aria-hidden="true"></span>
+              <span class="color-text"
+                ><span class="color-name">Orange</span
+                ><span class="color-slope">−3 dB/oct · note gaps</span></span
+              >
+            </button>
+          </div>
+        </aside>
+      </div>
+
+      <!-- ───────── Fullscreen exit overlay ───────── -->
+      <button
+        type="button"
+        id="exit-overlay"
+        class="exit-overlay"
+        aria-label="Exit fullscreen"
+        hidden
+      >
+        <span class="exit-hint">Click or press any key to exit</span>
+      </button>
+
+      <!-- ───────── Center (player) ───────── -->
+      <main id="center" class="center">
+        <header class="title-row meta-fade fs-hide">
+          <h1 class="title">
+            noise<span class="sr-only"> </span
+            ><span id="title-dot" class="title-dot" aria-hidden="true"></span>hue
+          </h1>
+        </header>
+        <div id="selection" class="selection meta-fade fs-hide">
+          <span id="sel-name" class="sel-name">White noise</span>
+          <span id="sel-slope" class="sel-slope">flat · 0 dB/oct</span>
+        </div>
+
+        <div id="viz" class="viz">
+          <button
+            type="button"
+            id="viz-btn"
+            class="viz-btn"
+            aria-pressed="false"
+            aria-label="Compare to white noise"
+          ></button>
+          <svg
+            id="wave-svg"
+            class="wave-svg"
+            viewBox="0 0 600 160"
+            preserveAspectRatio="none"
+            role="img"
+            aria-label="Waveform, idle"
+          >
+            <line
+              x1="0"
+              y1="80"
+              x2="600"
+              y2="80"
+              class="wave-axis"
+              vector-effect="non-scaling-stroke"
+            ></line>
+            <path id="wave" class="wave-path" d="" vector-effect="non-scaling-stroke"></path>
+          </svg>
+          <div id="cmp" class="cmp" hidden>
+            <svg
+              class="cmp-svg"
+              viewBox="0 0 600 160"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path id="cmp-area" class="cmp-area" d=""></path>
+              <line
+                x1="0"
+                y1="80"
+                x2="600"
+                y2="80"
+                class="cmp-axis"
+                vector-effect="non-scaling-stroke"
+              ></line>
+              <path id="cmp-ideal" class="cmp-ideal" d="" vector-effect="non-scaling-stroke"></path>
+              <path
+                id="cmp-measured"
+                class="cmp-measured"
+                d=""
+                vector-effect="non-scaling-stroke"
+              ></path>
+            </svg>
+            <div class="cmp-freqs" aria-hidden="true">
+              <span>20 Hz</span><span>1 kHz</span><span>20 kHz</span>
+            </div>
+            <p id="cmp-note" class="cmp-note"></p>
+          </div>
+        </div>
+
+        <div class="desc-wrap">
+          <p id="desc" class="desc meta-fade"></p>
+          <p id="unsupported" class="unsupported" role="alert" hidden>
+            Your browser can't play generated audio
+          </p>
+        </div>
+
+        <div id="bar" class="dock-bottom">
+          <div class="dock-bar" role="group" aria-label="Playback controls">
+            <button type="button" id="play" class="tp-play" aria-label="Play" title="Play">
+              <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"
+                ></path>
+              </svg>
+              <svg
+                class="icon-pause"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+                hidden
+              >
+                <rect x="6" y="5" width="4" height="14" rx="1"></rect>
+                <rect x="14" y="5" width="4" height="14" rx="1"></rect>
+              </svg>
+            </button>
+            <p id="status" class="status">
+              <span id="status-text" aria-live="polite">Paused</span
+              ><span id="status-timer" aria-hidden="true"></span>
+            </p>
+            <div class="tp-icons">
+              <div class="timer-wrap">
+                <button
+                  type="button"
+                  id="timer-btn"
+                  class="tp-icon tp-timer"
+                  aria-pressed="false"
+                  aria-expanded="false"
+                  aria-controls="timer-popover"
+                  aria-label="Sleep timer"
+                  title="Sleep timer"
+                >
+                  <svg
+                    class="timer-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"></path>
+                  </svg>
+                  <span id="timer-label" class="timer-label" hidden></span>
+                </button>
+                <div
+                  id="timer-popover"
+                  class="timer-popover"
+                  role="group"
+                  aria-label="Sleep timer"
+                  hidden
+                >
+                  <p class="timer-title">Sleep timer</p>
+                  <div class="timer-opts">
+                    <button type="button" class="timer-opt" data-minutes="0" aria-pressed="false">
+                      Off
+                    </button>
+                    <button type="button" class="timer-opt" data-minutes="15" aria-pressed="false">
+                      15 min
+                    </button>
+                    <button type="button" class="timer-opt" data-minutes="30" aria-pressed="false">
+                      30 min
+                    </button>
+                    <button type="button" class="timer-opt" data-minutes="45" aria-pressed="false">
+                      45 min
+                    </button>
+                    <button type="button" class="timer-opt" data-minutes="60" aria-pressed="false">
+                      60 min
+                    </button>
+                    <button type="button" class="timer-opt" data-minutes="90" aria-pressed="false">
+                      90 min
+                    </button>
+                  </div>
+                  <form id="timer-custom-form" class="timer-custom">
+                    <label for="timer-custom">Custom</label>
+                    <input
+                      id="timer-custom"
+                      type="number"
+                      min="1"
+                      max="480"
+                      step="1"
+                      inputmode="numeric"
+                    />
+                    <span class="timer-unit" aria-hidden="true">min</span>
+                    <button type="submit" id="timer-custom-set" class="timer-set">Set</button>
+                  </form>
+                </div>
+              </div>
+              <button
+                type="button"
+                id="compare"
+                class="tp-icon tp-compare"
+                aria-pressed="false"
+                aria-label="Compare to white noise"
+                title="Compare to white noise"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M3 12h18" stroke-opacity="0.5"></path>
+                  <path d="M3 19 21 5"></path>
+                </svg>
+              </button>
+              <button
+                type="button"
+                id="fullscreen"
+                class="tp-icon tp-fs"
+                aria-label="Fullscreen"
+                title="Fullscreen"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3"></path>
+                  <path d="M21 8V5a2 2 0 0 0-2-2h-3"></path>
+                  <path d="M3 16v3a2 2 0 0 0 2 2h3"></path>
+                  <path d="M16 21h3a2 2 0 0 0 2-2v-3"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="vol-row">
+            <button
+              type="button"
+              id="mute"
+              class="tp-mute"
+              aria-pressed="false"
+              aria-label="Mute"
+              title="Mute"
+            >
+              <svg
+                class="icon-vol-muted"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+                hidden
+              >
+                <path d="M11 5 6 9H3v6h3l5 4V5z"></path>
+                <path d="m16 9 6 6"></path>
+                <path d="m22 9-6 6"></path>
+              </svg>
+              <svg
+                class="icon-vol-low"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+                hidden
+              >
+                <path d="M11 5 6 9H3v6h3l5 4V5z"></path>
+                <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+              </svg>
+              <svg
+                class="icon-vol-high"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M11 5 6 9H3v6h3l5 4V5z"></path>
+                <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+                <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
+              </svg>
+            </button>
+            <label for="vol" class="sr-only">Volume</label>
+            <input id="vol" class="range" type="range" min="0" max="100" step="1" value="50" />
+            <span id="vol-readout" class="tp-vol" aria-hidden="true">50%</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- ───────── Sound panel (right) ───────── -->
+      <div id="slot-right" class="slot slot-right">
+        <button type="button" id="rail-right" class="rail rail-right" aria-label="Show sound panel">
+          <svg
+            class="rail-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"></path>
+            <circle cx="16" cy="6" r="2"></circle>
+            <circle cx="10" cy="12" r="2"></circle>
+            <circle cx="18" cy="18" r="2"></circle>
+          </svg>
+          <span class="rail-label">Sound</span>
+        </button>
+        <section id="pane-right" class="pane pane-right" aria-label="Sound options">
+          <div class="pane-head">
+            <div class="pane-title">
+              <button
+                type="button"
+                id="pin-right"
+                class="pin-btn"
+                aria-pressed="true"
+                aria-label="Unpin sound panel"
+                title="Unpin sound panel"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 17v5"></path>
+                  <path
+                    d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"
+                  ></path>
+                </svg>
+              </button>
+              <p class="panel-title">Sound</p>
+            </div>
+            <button
+              type="button"
+              id="reset"
+              class="reset-btn"
+              title="Reset volume and sound options"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+                <path d="M3 4v5h5"></path>
+              </svg>
+              <span>Reset</span>
+            </button>
+            <button
+              type="button"
+              id="fold-right"
+              class="fold-btn"
+              aria-expanded="true"
+              aria-controls="sound-fold"
+            >
+              <span class="sr-only fold-action">Hide sound options</span>
+              <span class="fold-hint" aria-hidden="true">Show sound options ·</span>
+              <span id="fold-right-summary">Defaults</span>
+              <svg
+                class="fold-chev"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div id="sound-fold" class="opts-col fold-body">
+            <!-- Presets -->
+            <div class="presets-row" role="group" aria-labelledby="presets-title">
+              <p id="presets-title" class="presets-title">Presets</p>
+              <div class="presets-chips">
+                <div id="presets" class="presets"></div>
+                <button type="button" id="preset-save" class="preset-save">+ Save</button>
+                <input
+                  id="preset-name"
+                  class="preset-input"
+                  type="text"
+                  maxlength="32"
+                  aria-label="Preset name"
+                  hidden
+                />
+              </div>
+            </div>
+
+            <!-- Color-specific settings (shown for brown, green, grey, orange) -->
+            <div id="grp-color" class="grp" role="group" aria-labelledby="grp-color-title" hidden>
+              <p class="grp-title">
+                <span id="grp-color-title">White settings</span>
+                <span class="changed-dot" hidden
+                  ><span class="changed-mark" title="Changed from default"></span
+                  ><span class="sr-only">(changed)</span></span
+                >
+              </p>
+              <div id="opts-brown" class="grp-opts" hidden>
+                <div class="field">
+                  <div class="field-head">
+                    <label for="browncorner">Depth</label
+                    ><span id="browncorner-text" class="field-val"></span>
+                  </div>
+                  <div class="field-row">
+                    <span class="end-label" aria-hidden="true">Deeper</span>
+                    <input
+                      id="browncorner"
+                      class="range"
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value="50"
+                    />
+                    <span class="end-label" aria-hidden="true">Lighter</span>
+                  </div>
+                </div>
+              </div>
+              <div id="opts-green" class="grp-opts" hidden>
+                <div class="field">
+                  <div class="field-head">
+                    <label for="greencenter">Center</label
+                    ><span id="greencenter-text" class="field-val"></span>
+                  </div>
+                  <div class="field-row">
+                    <span class="end-label" aria-hidden="true">Low</span>
+                    <input
+                      id="greencenter"
+                      class="range"
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value="50"
+                    />
+                    <span class="end-label" aria-hidden="true">High</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="field-head">
+                    <label for="greenwidth">Width</label
+                    ><span id="greenwidth-text" class="field-val"></span>
+                  </div>
+                  <div class="field-row">
+                    <span class="end-label" aria-hidden="true">Narrow</span>
+                    <input
+                      id="greenwidth"
+                      class="range"
+                      type="range"
+                      min="10"
+                      max="30"
+                      step="1"
+                      value="20"
+                    />
+                    <span class="end-label" aria-hidden="true">Wide</span>
+                  </div>
+                </div>
+              </div>
+              <div id="opts-grey" class="grp-opts" hidden>
+                <div class="field">
+                  <div class="field-head">
+                    <label for="greystrength">Hearing adjustment</label
+                    ><span id="greystrength-text" class="field-val"></span>
+                  </div>
+                  <div class="field-row">
+                    <input
+                      id="greystrength"
+                      class="range"
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value="100"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div id="opts-orange" class="grp-opts" hidden>
+                <div class="field">
+                  <div class="field-head">
+                    <label for="orangeq">Gap width</label
+                    ><span id="orangeq-text" class="field-val"></span>
+                  </div>
+                  <div class="field-row">
+                    <span class="end-label" aria-hidden="true">Wide</span>
+                    <input
+                      id="orangeq"
+                      class="range"
+                      type="range"
+                      min="5"
+                      max="60"
+                      step="1"
+                      value="30"
+                    />
+                    <span class="end-label" aria-hidden="true">Narrow</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="field-head">
+                    <label for="orangetune">Tuning</label
+                    ><span id="orangetune-text" class="field-val"></span>
+                  </div>
+                  <div class="field-row">
+                    <span class="end-label" aria-hidden="true">Lower</span>
+                    <input
+                      id="orangetune"
+                      class="range"
+                      type="range"
+                      min="415"
+                      max="466"
+                      step="1"
+                      value="440"
+                    />
+                    <span class="end-label" aria-hidden="true">Higher</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tone -->
+            <div id="grp-tone" class="grp" role="group" aria-label="Tone">
+              <p class="grp-title">
+                <span>Tone</span>
+                <span class="changed-dot" hidden
+                  ><span class="changed-mark" title="Changed from default"></span
+                  ><span class="sr-only">(changed)</span></span
+                >
+              </p>
+              <div class="field">
+                <div class="field-head">
+                  <label for="tilt">Tilt</label><span id="tilt-text" class="field-val"></span>
+                </div>
+                <div class="field-row">
+                  <span class="end-label" aria-hidden="true">Warm</span>
+                  <input
+                    id="tilt"
+                    class="range"
+                    type="range"
+                    min="-12"
+                    max="12"
+                    step="1"
+                    value="0"
+                  />
+                  <span class="end-label" aria-hidden="true">Bright</span>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field-head">
+                  <label for="lowcut">Low cut</label
+                  ><span id="lowcut-text" class="field-val"></span>
+                </div>
+                <div class="field-row">
+                  <span class="end-label" aria-hidden="true">Off</span>
+                  <input
+                    id="lowcut"
+                    class="range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="0"
+                  />
+                  <span class="end-label" aria-hidden="true">More</span>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field-head">
+                  <label for="highcut">High cut</label
+                  ><span id="highcut-text" class="field-val"></span>
+                </div>
+                <div class="field-row">
+                  <span class="end-label" aria-hidden="true">More</span>
+                  <input
+                    id="highcut"
+                    class="range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="100"
+                  />
+                  <span class="end-label" aria-hidden="true">Off</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Space -->
+            <div id="grp-space" class="grp" role="group" aria-label="Space">
+              <p class="grp-title">
+                <span>Space</span>
+                <span class="changed-dot" hidden
+                  ><span class="changed-mark" title="Changed from default"></span
+                  ><span class="sr-only">(changed)</span></span
+                >
+              </p>
+              <div class="field">
+                <div class="field-head">
+                  <label for="pan">Panning</label><span id="pan-text" class="field-val"></span>
+                </div>
+                <div class="field-row">
+                  <span class="end-label end-label-ear" aria-hidden="true"
+                    ><svg
+                      class="ear ear-left"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 1 1-7 0"></path>
+                      <path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 1 1 0 4"></path></svg
+                    >L</span
+                  >
+                  <input
+                    id="pan"
+                    class="range"
+                    type="range"
+                    min="-100"
+                    max="100"
+                    step="1"
+                    value="0"
+                  />
+                  <span class="end-label end-label-ear" aria-hidden="true"
+                    >R<svg
+                      class="ear"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 1 1-7 0"></path>
+                      <path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 1 1 0 4"></path></svg
+                  ></span>
+                </div>
+              </div>
+              <div class="field">
+                <div class="field-head">
+                  <label for="width">Stereo width</label
+                  ><span id="width-text" class="field-val"></span>
+                </div>
+                <div class="field-row">
+                  <span class="end-label" aria-hidden="true">Mono</span>
+                  <input
+                    id="width"
+                    class="range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="0"
+                  />
+                  <span class="end-label" aria-hidden="true">Wide</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Waves -->
+            <div id="grp-waves" class="grp" role="group" aria-label="Waves">
+              <p class="grp-title">
+                <span>Waves</span>
+                <span class="changed-dot" hidden
+                  ><span class="changed-mark" title="Changed from default"></span
+                  ><span class="sr-only">(changed)</span></span
+                >
+              </p>
+              <div class="field">
+                <div class="field-head">
+                  <label for="wavedepth">Wave depth</label
+                  ><span id="wavedepth-text" class="field-val"></span>
+                </div>
+                <div class="field-row">
+                  <span class="end-label" aria-hidden="true">Off</span>
+                  <input
+                    id="wavedepth"
+                    class="range"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value="0"
+                  />
+                  <span class="end-label" aria-hidden="true">Deep</span>
+                </div>
+              </div>
+              <div id="field-waveperiod" class="field is-dim">
+                <div class="field-head">
+                  <label for="waveperiod">Wave length</label
+                  ><span id="waveperiod-text" class="field-val"></span>
+                </div>
+                <div class="field-row">
+                  <span class="end-label" aria-hidden="true">Fast</span>
+                  <input
+                    id="waveperiod"
+                    class="range"
+                    type="range"
+                    min="4"
+                    max="20"
+                    step="1"
+                    value="8"
+                  />
+                  <span class="end-label" aria-hidden="true">Slow</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,4 @@
+docs/
+dist/
+.superpowers/
+package-lock.json
