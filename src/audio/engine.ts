@@ -74,7 +74,6 @@ export class NoiseEngine {
   private regenTimer: ReturnType<typeof setTimeout> | null = null;
   private fadeTimer: ReturnType<typeof setTimeout> | null = null;
   private fadeResolve: ((r: FadeResult) => void) | null = null;
-  private level = 0;
   private bands: number[] | null = null;
 
   constructor(factory: ContextFactory = defaultFactory) {
@@ -119,7 +118,6 @@ export class NoiseEngine {
       this.stopAllVoices();
       // master is silent now, so restoring the timer gain cannot be heard
       this.resetTimerGain(0.01);
-      this.level = 0;
       this.bands = null;
       void g.ctx.suspend();
     }, STOP_DELAY_MS);
@@ -166,7 +164,7 @@ export class NoiseEngine {
     if (g.panner) g.panner.pan.setTargetAtTime(o.pan / 100, t, 0.03);
   }
 
-  /** Time-domain samples decimated from the first 2048; also updates liveLevel. */
+  /** Time-domain samples decimated from the first 2048. */
   readWaveform(points: number): number[] | null {
     const g = this.graph;
     if (!g || !this.voice || points < 1) return null;
@@ -174,14 +172,6 @@ export class NoiseEngine {
     const step = Math.max(1, Math.floor(WAVE_WINDOW / points));
     const pts: number[] = [];
     for (let i = 0; i < points; i++) pts.push(g.wave[i * step] ?? 0);
-    let ss = 0;
-    for (let r = 0; r < WAVE_WINDOW; r++) {
-      const v = g.wave[r] ?? 0;
-      ss += v * v;
-    }
-    const rmsDb = 10 * Math.log10(ss / WAVE_WINDOW + 1e-12);
-    const target = Math.max(0, Math.min(1, (rmsDb + 50) / 36));
-    this.level = this.level * 0.9 + target * 0.1;
     return pts;
   }
 
@@ -207,10 +197,6 @@ export class NoiseEngine {
     if (!prev || prev.length !== out.length) this.bands = out;
     else for (let j = 0; j < out.length; j++) prev[j] = prev[j]! * 0.8 + out[j]! * 0.2;
     return this.bands ? [...this.bands] : null;
-  }
-
-  liveLevel(): number {
-    return this.level;
   }
 
   /** Linear fade of the timer gain to 0; resolves 'done' (caller then pauses). */
@@ -255,7 +241,6 @@ export class NoiseEngine {
     }
     this.graph = null;
     this.buffers.clear();
-    this.level = 0;
     this.bands = null;
   }
 

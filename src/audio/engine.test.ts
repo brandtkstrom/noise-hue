@@ -137,7 +137,6 @@ describe('NoiseEngine', () => {
     expect(c.sources[0]!.stopped).toBe(true);
     expect(c.suspendCalls).toBe(1);
     expect(e.readWaveform(64)).toBeNull();
-    expect(e.liveLevel()).toBe(0);
   });
 
   it('play during the pause tail keeps the voice and does not suspend', async () => {
@@ -255,20 +254,16 @@ describe('NoiseEngine', () => {
     expect(c.gains.some((g) => g.connections.includes(c.analysers[0]!))).toBe(true);
   });
 
-  it('readWaveform decimates and liveLevel smooths RMS', async () => {
+  it('readWaveform decimates the analyser window', async () => {
     const { factory, contexts } = fakeFactory();
     const e = new NoiseEngine(factory);
     expect(e.readWaveform(64)).toBeNull();
     await e.play('white', O, 0.5);
     const a = contexts[0]!.analysers[0]!;
-    a.timeValue = 0.1; // rms −20 dB → target (−20+50)/36
+    a.timeValue = 0.1;
     const pts = e.readWaveform(64)!;
     expect(pts).toHaveLength(64);
     expect(pts[0]).toBeCloseTo(0.1, 6);
-    const target = 30 / 36;
-    expect(e.liveLevel()).toBeCloseTo(target * 0.1, 6);
-    e.readWaveform(64);
-    expect(e.liveLevel()).toBeCloseTo(target * 0.1 * 0.9 + target * 0.1, 6);
   });
 
   it('measureBands averages bin power per band in dB, smoothed', async () => {
