@@ -1,0 +1,9 @@
+{
+  // Static assets only: `main` is optional for assets-only Workers.
+  "name": "noisehue",
+  // Set this to the date you create or change the config.
+  "compatibility_date": "2026-10-13",
+  "assets": {
+    "directory": "./dist",
+  },
+}
