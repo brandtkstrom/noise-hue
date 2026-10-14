@@ -1,6 +1,8 @@
 # Noise Hue
 
-A colored-noise player for [noisehue.app](https://noisehue.app). Pick a noise color (white, grey, brown, pink, green, blue, violet, orange), shape it with a few sound options, and listen, with a sleep timer and saved presets. The sound is generated live with Web Audio in the browser.
+A colored-noise player for [noisehue.app](https://noisehue.app). Pick a noise color (white, grey, brown, pink, green, blue, violet, orange), shape it with a few sound options, and listen. The sound is generated live with Web Audio in the browser.
+
+The UI is a minimal, mobile-first single column: color chips, a player card, and the sound options in a closed-by-default `<details>`. No visualiser, presets, sleep timer or animations; the background is a static accent-tinted gradient.
 
 Plain Vite + TypeScript with vanilla DOM: no UI framework and no runtime dependencies.
 
@@ -50,20 +52,20 @@ The first deploy creates the `noisehue` Worker at `https://noisehue.<your-subdom
 
 ```
 index.html            static markup for the whole page
-styles/               tokens.css, layout.css, components.css
+styles/app.css        all styles: tokens, base, layout, controls
 src/
-  main.ts             wiring: persistence, stores, engine, UI modules, viz loop
-  config.ts           fixed configuration (former prototype tweaks)
+  main.ts             wiring: persistence, settings + app stores, engine, UI modules
+  config.ts           fixed configuration (start type, default volume, volume floor)
   types.ts            shared types
   app/engine-sync.ts  maps settings changes to engine calls
   audio/              Web Audio engine and pure noise generators / filter math
   noise/catalog.ts    the 8 noise colors (names, colors, slopes, descriptions)
-  state/              store, defaults, validation, persistence, mappings, sleep timer, presets
-  ui/                 DOM modules: panels, colors, sound, presets, transport, timer popover, viz
-  viz/                pure waveform / compare-curve and background builders
+  state/              store, defaults, validation, persistence, mappings
+  ui/                 DOM modules: dom, app-state, colors, sound, transport
 docs/
   superpowers/specs/  design spec
-  prototype/          reference prototype (source of truth for look and behavior)
+  superpowers/plans/  implementation plans
+  prototype/          reference prototype (source for the v1 look and behavior)
   qa-checklist.md     manual QA checklist
 ```
 
@@ -71,10 +73,11 @@ Tests sit next to the code (`*.test.ts`; `*.dom.test.ts` run under jsdom).
 
 ## Docs
 
-- Design spec: [docs/superpowers/specs/2026-10-13-noisehue-design.md](docs/superpowers/specs/2026-10-13-noisehue-design.md)
+- Minimal UI plan: [docs/superpowers/plans/2026-10-14-minimal-ui.md](docs/superpowers/plans/2026-10-14-minimal-ui.md)
 - Manual QA checklist: [docs/qa-checklist.md](docs/qa-checklist.md)
+- v1 design spec (history): [docs/superpowers/specs/2026-10-13-noisehue-design.md](docs/superpowers/specs/2026-10-13-noisehue-design.md)
 
 ## Notes
 
 - Playback is foreground-only. Sound may stop when a phone locks or the tab is suspended.
-- Settings, panel layout and presets are saved in `localStorage` (`noisehue:settings`, `noisehue:ui`, `noisehue:presets`). If storage is blocked, the app still works with defaults.
+- Settings are saved in `localStorage` under `noisehue:settings`. If storage is blocked, the app still works with defaults. Data left by the full v1 app (`noisehue:ui`, `noisehue:presets`) is ignored and left untouched.
