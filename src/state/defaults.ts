@@ -17,6 +17,9 @@ export const OPTION_DEFAULTS: SoundOptions = {
   orangeTune: 440,
 };
 
+/** Every option key, in defaults order (validation, preset match and change summary derive from it). */
+export const OPTION_KEYS = Object.keys(OPTION_DEFAULTS) as (keyof SoundOptions)[];
+
 export const OPTION_LIMITS: Record<keyof SoundOptions, [number, number]> = {
   tilt: [-12, 12],
   lowCut: [20, 300],

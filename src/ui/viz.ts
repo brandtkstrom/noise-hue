@@ -8,7 +8,7 @@ import type { NoiseId, Settings } from '../types';
 import { buildBackground, motionWobble } from '../viz/background';
 import { BANDS, idealArea, idealPath, measuredPaths, wavePath } from '../viz/waveform';
 import type { AppState } from './app-state';
-import { $, setAttr, setText, toggleClass } from './dom';
+import { $, setAttr, setHidden, setText, toggleClass } from './dom';
 
 export type VizEngine = Pick<NoiseEngine, 'readWaveform' | 'measureBands' | 'playing'>;
 
@@ -96,7 +96,7 @@ export function mountViz(deps: {
         playing && sw.id === s.type && CONFIG.ringAnim === 'ripple',
       );
     }
-    setAttr(cmp, 'hidden', compare ? null : '');
+    setHidden(cmp, !compare);
     if (compare) setText(cmpNote, compareNote(s.type, playing));
   }
 

@@ -1,9 +1,9 @@
-import { getNoise, colorKeysFor } from '../noise/catalog';
+import { COLORS_WITH_OPTIONS, colorKeysFor, getNoise } from '../noise/catalog';
 import { DEFAULT_SETTINGS, OPTION_DEFAULTS } from '../state/defaults';
 import * as m from '../state/mappings';
 import type { Store } from '../state/store';
 import type { NoiseId, Settings, SoundOptions } from '../types';
-import { $, setAttr, setText, toggleClass } from './dom';
+import { $, setAttr, setHidden, setText, toggleClass } from './dom';
 
 type Key = keyof SoundOptions;
 
@@ -31,9 +31,7 @@ const SLIDERS: readonly SliderDef[] = [
 ];
 
 /** Colors that have their own settings block (`#opts-<id>`). */
-const COLOR_BLOCKS: readonly NoiseId[] = ['brown', 'green', 'grey', 'orange'];
-
-const setHidden = (el: Element, hidden: boolean): void => setAttr(el, 'hidden', hidden ? '' : null);
+const COLOR_BLOCKS: readonly NoiseId[] = COLORS_WITH_OPTIONS;
 
 const toValue = (def: SliderDef, pos: number): number => (def.scale ? def.scale.fromPos(pos) : pos);
 

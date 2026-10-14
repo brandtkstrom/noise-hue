@@ -1,7 +1,7 @@
 import { CONFIG } from '../config';
-import { COLOR_OPTION_KEYS, colorKeysFor, getNoise } from '../noise/catalog';
+import { ALL_COLOR_OPTION_KEYS, colorKeysFor, getNoise } from '../noise/catalog';
 import type { Settings, SoundOptions } from '../types';
-import { OPTION_DEFAULTS } from './defaults';
+import { OPTION_DEFAULTS, OPTION_KEYS } from './defaults';
 
 // Intentional divergence from the prototype: its dots hid "Off" cuts but its "N changed"
 // summary counted them. Both derive from these thresholds now, so they cannot disagree.
@@ -10,9 +10,7 @@ const LOW_CUT_OFF = 21;
 /** At or above this the high cut displays as "Off" and does not count as a change. */
 const HIGH_CUT_OFF = 19900;
 /** Options owned by some color; only the current color's keys count as changes. */
-const ALL_COLOR_KEYS = new Set<keyof SoundOptions>(
-  Object.keys(COLOR_OPTION_KEYS) as (keyof SoundOptions)[],
-);
+const ALL_COLOR_KEYS = new Set<keyof SoundOptions>(ALL_COLOR_OPTION_KEYS);
 
 export function volumeGain(volume: number, muted: boolean): number {
   if (muted || volume <= 0) return 0;
@@ -108,6 +106,6 @@ export function changeSummary(s: Settings): ChangeSummary {
     tone: anyChanged(['tilt', 'lowCut', 'highCut']),
     space: anyChanged(['pan', 'width']),
     waves: anyChanged(['waveDepth', 'wavePeriod']),
-    count: (Object.keys(OPTION_DEFAULTS) as (keyof SoundOptions)[]).filter(changed).length,
+    count: OPTION_KEYS.filter(changed).length,
   };
 }

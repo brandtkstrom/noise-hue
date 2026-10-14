@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { COLOR_OPTION_KEYS, NOISE_TYPES, colorKeysFor, getNoise } from './catalog';
+import {
+  ALL_COLOR_OPTION_KEYS,
+  COLORS_WITH_OPTIONS,
+  COLOR_OPTION_KEYS,
+  NOISE_TYPES,
+  colorKeysFor,
+  getNoise,
+} from './catalog';
 
 describe('noise catalog', () => {
   test('order matches display order', () => {
@@ -29,5 +36,17 @@ describe('noise catalog', () => {
     expect(colorKeysFor('blue')).toEqual([]);
     expect(colorKeysFor('orange')).toEqual(['orangeQ', 'orangeTune']);
     expect(COLOR_OPTION_KEYS.brownCorner).toBe('brown');
+  });
+
+  test('exposes all option keys and the colors that own options', () => {
+    expect(ALL_COLOR_OPTION_KEYS).toEqual([
+      'brownCorner',
+      'greenCenter',
+      'greenWidth',
+      'greyStrength',
+      'orangeQ',
+      'orangeTune',
+    ]);
+    expect(COLORS_WITH_OPTIONS).toEqual(['brown', 'green', 'grey', 'orange']);
   });
 });

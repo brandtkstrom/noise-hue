@@ -1,7 +1,5 @@
 import type { NoiseId, Preset, Settings, SoundOptions } from '../types';
-import { MAX_PRESET_NAME, MAX_PRESETS, OPTION_DEFAULTS } from './defaults';
-
-const OPTION_KEYS = Object.keys(OPTION_DEFAULTS) as (keyof SoundOptions)[];
+import { MAX_PRESET_NAME, MAX_PRESETS, OPTION_KEYS } from './defaults';
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

@@ -19,6 +19,11 @@ export function setAttr(el: Element, name: string, value: string | null): void {
   }
 }
 
+/** Toggles the `hidden` attribute. */
+export function setHidden(el: Element, hidden: boolean): void {
+  setAttr(el, 'hidden', hidden ? '' : null);
+}
+
 export function toggleClass(el: Element, cls: string, on: boolean): void {
   if (el.classList.contains(cls) !== on) el.classList.toggle(cls, on);
 }

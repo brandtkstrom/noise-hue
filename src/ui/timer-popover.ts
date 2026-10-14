@@ -3,7 +3,7 @@ import type { Store } from '../state/store';
 import type { SleepTimer } from '../state/timer';
 import type { UiPrefs } from '../types';
 import type { AppState } from './app-state';
-import { $, setAttr, setText } from './dom';
+import { $, setAttr, setHidden, setText } from './dom';
 
 export interface TimerPopover {
   /** Re-reads the timer: app.timerLabel, button label/pressed state, selected option. */
@@ -39,7 +39,7 @@ export function mountTimerPopover(deps: {
   function open(): void {
     custom.value = String(ui.get().sleepMinutes);
     setAttr(custom, 'aria-invalid', null);
-    setAttr(pop, 'hidden', null);
+    setHidden(pop, false);
     setAttr(btn, 'aria-expanded', 'true');
     const current = opts.find((o) => o.getAttribute('aria-pressed') === 'true') ?? opts[0];
     current?.focus();
@@ -47,7 +47,7 @@ export function mountTimerPopover(deps: {
 
   function close(refocus: boolean): void {
     if (!isOpen()) return;
-    setAttr(pop, 'hidden', '');
+    setHidden(pop, true);
     setAttr(btn, 'aria-expanded', 'false');
     if (refocus) btn.focus();
   }
@@ -68,7 +68,7 @@ export function mountTimerPopover(deps: {
     app.set({ timerLabel: text });
     setAttr(btn, 'aria-pressed', phase === 'off' ? 'false' : 'true');
     setText(label, text ?? '');
-    setAttr(label, 'hidden', text === null ? '' : null);
+    setHidden(label, text === null);
     const name = text !== null ? `Sleep timer, ${text} left` : 'Sleep timer';
     setAttr(btn, 'aria-label', name);
     setAttr(btn, 'title', name);

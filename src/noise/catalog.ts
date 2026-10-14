@@ -95,8 +95,16 @@ export const COLOR_OPTION_KEYS: Record<ColorOptionKey, NoiseId> = {
   orangeTune: 'orange',
 };
 
+/** Every color-specific option key, in declaration order. */
+export const ALL_COLOR_OPTION_KEYS: readonly ColorOptionKey[] = Object.keys(
+  COLOR_OPTION_KEYS,
+) as ColorOptionKey[];
+
+/** Every color that owns at least one option (each has an `#opts-<id>` block). */
+export const COLORS_WITH_OPTIONS: readonly NoiseId[] = [
+  ...new Set(Object.values(COLOR_OPTION_KEYS)),
+];
+
 export function colorKeysFor(id: NoiseId): ColorOptionKey[] {
-  return (Object.keys(COLOR_OPTION_KEYS) as ColorOptionKey[]).filter(
-    (k) => COLOR_OPTION_KEYS[k] === id,
-  );
+  return ALL_COLOR_OPTION_KEYS.filter((k) => COLOR_OPTION_KEYS[k] === id);
 }

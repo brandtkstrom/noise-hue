@@ -1,21 +1,19 @@
 import type { NoiseEngine } from '../audio/engine';
-import { COLOR_OPTION_KEYS, colorKeysFor } from '../noise/catalog';
-import { OPTION_DEFAULTS } from '../state/defaults';
+import { ALL_COLOR_OPTION_KEYS, colorKeysFor } from '../noise/catalog';
+import { OPTION_KEYS } from '../state/defaults';
 import { volumeGain } from '../state/mappings';
 import { optionsOf } from '../state/presets';
 import type { Store } from '../state/store';
-import type { Settings, SoundOptions } from '../types';
+import type { Settings } from '../types';
 
 export type SyncPort = Pick<
   NoiseEngine,
   'switchTo' | 'regenerate' | 'applyOptions' | 'setLevel' | 'playing'
 >;
 
-const COLOR_KEYS = new Set<string>(Object.keys(COLOR_OPTION_KEYS));
+const COLOR_KEYS = new Set<string>(ALL_COLOR_OPTION_KEYS);
 /** Options the engine applies in place (filters, width, pan, waves). */
-const SHARED_KEYS = (Object.keys(OPTION_DEFAULTS) as (keyof SoundOptions)[]).filter(
-  (k) => !COLOR_KEYS.has(k),
-);
+const SHARED_KEYS = OPTION_KEYS.filter((k) => !COLOR_KEYS.has(k));
 
 /**
  * Maps one settings change to engine calls:

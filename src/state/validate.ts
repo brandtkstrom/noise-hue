@@ -6,6 +6,7 @@ import {
   MAX_PRESET_NAME,
   MAX_PRESETS,
   OPTION_DEFAULTS,
+  OPTION_KEYS,
   OPTION_LIMITS,
   SLEEP_MINUTES_LIMITS,
   VOLUME_LIMITS,
@@ -28,7 +29,7 @@ function noiseId(v: unknown): NoiseId | null {
 function sanitizeOptions(raw: unknown): SoundOptions {
   const r = isRec(raw) ? raw : {};
   const out = { ...OPTION_DEFAULTS };
-  for (const k of Object.keys(OPTION_DEFAULTS) as (keyof SoundOptions)[]) {
+  for (const k of OPTION_KEYS) {
     out[k] = num(r[k], OPTION_LIMITS[k], OPTION_DEFAULTS[k]);
   }
   return out;
