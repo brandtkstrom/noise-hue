@@ -33,7 +33,18 @@ rm -rf node_modules && npm install
 | `npm run lint`    | ESLint (typescript-eslint)                                         |
 | `npm run format`  | Prettier, writes changes                                           |
 
-`dist/` is a static site and can be deployed to any static host.
+`dist/` is a static site; on `main`, CI deploys it to Cloudflare (see [Deploy](#deploy)).
+
+## Deploy
+
+GitHub Actions (`.github/workflows/ci.yml`) runs `npm test`, `npm run lint` and `npm run build` on every pull request and push. On a push to `main` it then deploys `dist/` to a Cloudflare Worker (static assets only, configured in `wrangler.jsonc`).
+
+One-time setup:
+
+1. In the Cloudflare dashboard, go to **Account API tokens** → **Create Token** and use the **Edit Cloudflare Workers** template; scope it to your account.
+2. Copy your account ID and add both values as repository secrets (Settings → Secrets and variables → Actions): `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+
+The first deploy creates the `noisehue` Worker at `https://noisehue.<your-subdomain>.workers.dev`; add `noisehue.app` as a custom domain on the Worker when you are ready. Deploys create immutable Worker versions, so you can roll back from the dashboard or with `npx wrangler rollback`.
 
 ## Project structure
 
