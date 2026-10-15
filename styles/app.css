@@ -71,12 +71,13 @@ summary:focus-visible {
 
 .app {
   min-height: 100dvh;
+  min-width: 16rem;
   /* solid fallback first: without color-mix support the gradient is dropped */
   background-color: var(--bg);
   background-image: linear-gradient(
     180deg,
-    var(--bg) 0%,
-    color-mix(in srgb, var(--accent) 12%, var(--bg)) 100%
+    var(--bg) 10%,
+    color-mix(in oklab, var(--accent), var(--bg))
   );
 }
 
@@ -208,18 +209,27 @@ summary:focus-visible {
 /* ───────── Player ───────── */
 
 .player {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 0.75rem;
   padding: 1rem;
   border: 1px solid var(--line);
   border-radius: 0.75rem;
   background: var(--panel);
+  align-items: center;
+  text-align: center;
+  justify-items: stretch;
+  grid-template-rows: 2fr auto 1fr;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-areas:
+        ". control ."
+        "state state state"
+        "volume volume volume";
 }
 
 .transport {
-  display: flex;
+  grid-area: control;
   align-items: center;
+  text-align: center;
   gap: 0.875rem;
 }
 
@@ -228,6 +238,7 @@ summary:focus-visible {
   width: 3.25rem;
   height: 3.25rem;
   padding: 0;
+  margin: auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -245,13 +256,14 @@ summary:focus-visible {
 }
 
 .status {
-  flex: 1;
+  display: block;
   margin: 0;
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-align: center;
+  grid-area: state;
 }
 
 .status[data-state='paused'] {
@@ -270,16 +282,17 @@ summary:focus-visible {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  grid-area: volume;
 }
 
 .mute-btn {
-  flex: none;
+  flex: 0 1;
   width: 2.5rem;
   height: 2.5rem;
   padding: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   border: none;
   border-radius: 50%;
   background: transparent;
@@ -306,8 +319,8 @@ summary:focus-visible {
 }
 
 .vol-readout {
-  flex: none;
-  width: 3rem;
+  flex: 0 1;
+  min-width: 2rem;
   text-align: right;
   font-family: var(--font-mono);
   font-size: 0.8125rem;
@@ -341,6 +354,10 @@ summary:focus-visible {
   font-weight: 500;
 }
 
+.options-text {
+    margin: 0.25rem;
+}
+
 .options-summary:hover {
   background: var(--hover);
 }
@@ -349,7 +366,7 @@ summary:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 0.25rem 1rem 1rem;
+  padding: 1rem;
 }
 
 .opt-group,
@@ -366,6 +383,7 @@ summary:focus-visible {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
+  align-self: center;
 }
 
 .field {
@@ -397,7 +415,7 @@ summary:focus-visible {
 }
 
 .reset-btn {
-  align-self: flex-start;
+  align-self: center;
   min-height: 2.25rem;
   padding: 0 0.875rem;
   border: 1px solid var(--line-2);
@@ -418,6 +436,15 @@ summary:focus-visible {
 @media (min-width: 40em) {
   .shell {
     padding-top: 2.5rem;
+  }
+  .player {
+    display: grid;
+    padding: 1.5rem 1rem;
+    grid-template-rows: auto;
+    grid-template-columns: 1fr 4fr 1fr;
+    grid-template-areas:
+          "control state none"
+          "volume volume volume";
   }
 }
 
