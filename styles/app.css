@@ -221,9 +221,9 @@ summary:focus-visible {
   grid-template-rows: 2fr auto 1fr;
   grid-template-columns: repeat(3, 1fr);
   grid-template-areas:
-        ". control ."
-        "state state state"
-        "volume volume volume";
+    '. control .'
+    'state state state'
+    'volume volume volume';
 }
 
 .transport {
@@ -355,7 +355,7 @@ summary:focus-visible {
 }
 
 .options-text {
-    margin: 0.25rem;
+  margin: 0.25rem;
 }
 
 .options-summary:hover {
@@ -442,11 +442,11 @@ summary:focus-visible {
     grid-template-rows: auto;
     grid-template-columns: 1fr 4fr 1fr;
     grid-template-areas:
-          "control state none"
-          "volume volume volume";
+      'control state none'
+      'volume volume volume';
   }
   .play-btn {
-      margin: 0;
+    margin: 0;
   }
 }
 

@@ -1,10 +1,23 @@
 # Noise Hue
 
-A colored-noise player for [noisehue.app](https://noisehue.app). Pick a noise color (white, grey, brown, pink, green, blue, violet, orange), shape it with a few sound options, and listen. The sound is generated live with Web Audio in the browser.
+A colored-noise player for [noisehue.app](https://noisehue.app). Pick a noise color (white, grey, brown, pink, green, blue, violet, orange), shape it with a few sound options, and listen. The sound is generated live with Web Audio — no audio files. Plain Vite + TypeScript with vanilla DOM: no UI framework and no runtime dependencies.
 
-The UI is a minimal, mobile-first single column: color chips, a player card, and the sound options in a closed-by-default `<details>`. No visualiser, presets, sleep timer or animations; the background is a static accent-tinted gradient.
+## The app
 
-Plain Vite + TypeScript with vanilla DOM: no UI framework and no runtime dependencies.
+A minimal, mobile-first single column (capped at 32 rem), dark-only, with no animations:
+
+- **Colors** — eight chips with swatches; the selected color's one-line description and spectral slope (`flat · 0 dB/oct`, `−6 dB/oct`, …) are shown below. The selection is the accent everywhere: title dot, play button, sliders, the background gradient's tint, and the favicon.
+- **Player** — play/pause, a status line (`Paused`, `Playing · White`, `Muted · …`), mute, and volume (a −40 dB to 0 dB taper; 0% is silence).
+- **Sound options**, in a closed-by-default `<details>`:
+  - _Tone_: tilt, low cut, high cut.
+  - _Space_: panning, stereo width.
+  - _Waves_: a slow volume swell (depth and period).
+  - Color-specific controls where they apply: brown depth, green center and width, grey hearing adjustment, orange gap width and tuning.
+  - Reset to defaults resets volume, mute and every option; it keeps the selected color.
+
+## How it works
+
+Noise is synthesized into looping 8-second stereo buffers with independent channels, so stereo width is real decorrelation. Changing the color crossfades to a fresh buffer; color-specific options rebuild it (debounced); tone, space and wave controls are applied live on the filter graph. Pause fades out and suspends the audio context.
 
 ## Requirements
 
@@ -52,6 +65,7 @@ The first deploy creates the `noisehue` Worker at `https://noisehue.<your-subdom
 
 ```
 index.html            static markup for the whole page
+public/               favicon.svg (pre-JS default) and favicon.ico (fallback)
 styles/app.css        all styles: tokens, base, layout, controls
 src/
   main.ts             wiring: persistence, settings + app stores, engine, UI modules
@@ -61,23 +75,12 @@ src/
   audio/              Web Audio engine and pure noise generators / filter math
   noise/catalog.ts    the 8 noise colors (names, colors, slopes, descriptions)
   state/              store, defaults, validation, persistence, mappings
-  ui/                 DOM modules: dom, app-state, colors, sound, transport
-docs/
-  superpowers/specs/  design spec
-  superpowers/plans/  implementation plans
-  prototype/          reference prototype (source for the v1 look and behavior)
-  qa-checklist.md     manual QA checklist
+  ui/                 DOM modules: dom, app-state, colors, favicon, sound, transport
 ```
 
 Tests sit next to the code (`*.test.ts`; `*.dom.test.ts` run under jsdom).
 
-## Docs
-
-- Minimal UI plan: [docs/superpowers/plans/2026-10-14-minimal-ui.md](docs/superpowers/plans/2026-10-14-minimal-ui.md)
-- Manual QA checklist: [docs/qa-checklist.md](docs/qa-checklist.md)
-- v1 design spec (history): [docs/superpowers/specs/2026-10-13-noisehue-design.md](docs/superpowers/specs/2026-10-13-noisehue-design.md)
-
 ## Notes
 
-- Playback is foreground-only. Sound may stop when a phone locks or the tab is suspended.
-- Settings are saved in `localStorage` under `noisehue:settings`. If storage is blocked, the app still works with defaults. Data left by the full v1 app (`noisehue:ui`, `noisehue:presets`) is ignored and left untouched.
+- Playback is foreground-only: there is no Media Session integration, so sound may stop when a phone locks or the tab is suspended.
+- Settings persist to `localStorage` under `noisehue:settings` (writes are debounced and flushed when the page hides). Stored values are sanitized on load, and a legacy `noise-app-config` value is migrated once. If storage is blocked, the app runs on defaults.

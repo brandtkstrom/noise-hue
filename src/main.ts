@@ -6,6 +6,7 @@ import type { Settings } from './types';
 import { DEFAULT_APP_STATE, type AppState } from './ui/app-state';
 import { mountColors } from './ui/colors';
 import { $ } from './ui/dom';
+import { mountFavicon } from './ui/favicon';
 import { mountSound } from './ui/sound';
 import { mountTransport, type EnginePort } from './ui/transport';
 
@@ -76,6 +77,7 @@ function main(): void {
 
   // ── UI ──
   mountColors(settings);
+  mountFavicon(settings);
   mountSound(settings);
   mountTransport({ settings, app, engine: engine ?? silentEngine });
 }
