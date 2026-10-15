@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS } from './defaults';
+import { DEFAULT_SETTINGS, OPTION_KEYS } from './defaults';
 import {
   brownCorner,
   brownCornerText,
-  changeSummary,
   effectiveVolume,
   greenCenter,
   greenCenterText,
@@ -14,10 +13,11 @@ import {
   highCutText,
   lowCut,
   lowCutText,
+  optionsOf,
   orangeQText,
   orangeTuneText,
   panText,
-  statusColor,
+  statusState,
   statusText,
   tiltText,
   volumeGain,
@@ -99,44 +99,25 @@ describe('value text', () => {
 });
 
 describe('status', () => {
-  it('builds text and colors', () => {
-    expect(statusText(true, pink, '27m')).toBe('Playing · Pink · 27m left');
-    expect(statusText(true, pink, null)).toBe('Playing · Pink');
-    expect(statusText(false, pink, null)).toBe('Paused');
-    expect(statusText(false, pink, '27m')).toBe('Paused');
-    expect(statusText(true, { ...pink, muted: true }, null)).toBe('Muted · Pink');
-    expect(statusColor(false, pink)).toBe('#F2867E');
-    expect(statusColor(true, { ...pink, muted: true })).toBe('#EBC66A');
-    expect(statusColor(true, pink)).toBe('#74D69A');
+  it('builds text and states', () => {
+    expect(statusText(true, pink)).toBe('Playing · Pink');
+    expect(statusText(false, pink)).toBe('Paused');
+    expect(statusText(true, { ...pink, muted: true })).toBe('Muted · Pink');
+    expect(statusState(false, pink)).toBe('paused');
+    expect(statusState(true, { ...pink, muted: true })).toBe('muted');
+    expect(statusState(true, pink)).toBe('playing');
   });
 });
 
-describe('changes', () => {
-  it('counts only the current color keys plus shared options', () => {
-    expect(changeSummary(DEFAULT_SETTINGS).count).toBe(0);
-    expect(changeSummary({ ...DEFAULT_SETTINGS, type: 'blue', greenCenter: 800 }).count).toBe(0);
-    expect(changeSummary({ ...DEFAULT_SETTINGS, type: 'green', greenCenter: 800 }).count).toBe(1);
-    expect(changeSummary({ ...DEFAULT_SETTINGS, pan: 10, tilt: 2 }).count).toBe(2);
-  });
-  it('computes group flags', () => {
-    expect(changeSummary(DEFAULT_SETTINGS)).toEqual({
-      char: false,
-      tone: false,
-      space: false,
-      waves: false,
-      count: 0,
-    });
-    expect(changeSummary({ ...DEFAULT_SETTINGS, type: 'green', greenWidth: 1 }).char).toBe(true);
-    expect(changeSummary({ ...DEFAULT_SETTINGS, type: 'blue', greenWidth: 1 }).char).toBe(false);
-    expect(changeSummary({ ...DEFAULT_SETTINGS, highCut: 8000 }).tone).toBe(true);
-    expect(changeSummary({ ...DEFAULT_SETTINGS, pan: -5 }).space).toBe(true);
-    expect(changeSummary({ ...DEFAULT_SETTINGS, wavePeriod: 10 }).waves).toBe(true);
-  });
-  it('treats values that display as Off as unchanged in both flag and count', () => {
-    const off = changeSummary({ ...DEFAULT_SETTINGS, lowCut: 21, highCut: 19900 });
-    expect(off.tone).toBe(false);
-    expect(off.count).toBe(0);
-    expect(changeSummary({ ...DEFAULT_SETTINGS, lowCut: 22 }).count).toBe(1);
-    expect(changeSummary({ ...DEFAULT_SETTINGS, highCut: 19899 }).count).toBe(1);
+describe('optionsOf', () => {
+  it('copies exactly the option keys with their values', () => {
+    const source = { ...DEFAULT_SETTINGS, tilt: 5, orangeQ: 12 };
+    const o = optionsOf(source);
+    expect(Object.keys(o)).toEqual([...OPTION_KEYS]);
+    expect(o.tilt).toBe(5);
+    expect(o.orangeQ).toBe(12);
+    expect('type' in o).toBe(false);
+    expect('volume' in o).toBe(false);
+    expect('muted' in o).toBe(false);
   });
 });

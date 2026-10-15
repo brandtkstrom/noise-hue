@@ -5,8 +5,6 @@ import { tiltGains, waveParams, widthGains } from './params';
 
 export type ContextFactory = () => AudioContext;
 
-type FadeResult = 'done' | 'cancelled';
-
 interface Voice {
   src: AudioBufferSourceNode;
   g: GainNode;
@@ -27,18 +25,13 @@ interface Graph {
   waveGain: GainNode;
   waveLfo: OscillatorNode;
   waveLfoGain: GainNode;
-  timerGain: GainNode;
   panner: StereoPannerNode | null;
-  analyser: AnalyserNode;
-  wave: Float32Array<ArrayBuffer>;
-  freq: Float32Array<ArrayBuffer>;
 }
 
 const BUFFER_SECONDS = 8;
 const CROSSFADE = 0.3;
 const STOP_DELAY_MS = 500;
 const REGEN_DEBOUNCE_MS = 250;
-const WAVE_WINDOW = 2048;
 /** Bounds memory when slider-driven regeneration creates many signatures. */
 const MAX_CACHED_BUFFERS = 10;
 
@@ -72,9 +65,6 @@ export class NoiseEngine {
   private isPlaying = false;
   private stopTimer: ReturnType<typeof setTimeout> | null = null;
   private regenTimer: ReturnType<typeof setTimeout> | null = null;
-  private fadeTimer: ReturnType<typeof setTimeout> | null = null;
-  private fadeResolve: ((r: FadeResult) => void) | null = null;
-  private bands: number[] | null = null;
 
   constructor(factory: ContextFactory = defaultFactory) {
     this.factory = factory;
@@ -94,7 +84,6 @@ export class NoiseEngine {
       clearTimeout(this.stopTimer);
       this.stopTimer = null;
     }
-    this.abortFade();
     this.applyOptions(o);
     if (!this.voice || this.voice.key !== colorSignature(id, o)) this.startVoice(id, o);
     this.setMaster(gain, 0.08);
@@ -107,7 +96,6 @@ export class NoiseEngine {
     if (!g) return;
     this.isPlaying = false;
     this.setMaster(0, 0.06);
-    this.abortFade(false);
     if (this.regenTimer !== null) {
       clearTimeout(this.regenTimer);
       this.regenTimer = null;
@@ -116,9 +104,6 @@ export class NoiseEngine {
     this.stopTimer = setTimeout(() => {
       this.stopTimer = null;
       this.stopAllVoices();
-      // master is silent now, so restoring the timer gain cannot be heard
-      this.resetTimerGain(0.01);
-      this.bands = null;
       void g.ctx.suspend();
     }, STOP_DELAY_MS);
   }
@@ -164,71 +149,10 @@ export class NoiseEngine {
     if (g.panner) g.panner.pan.setTargetAtTime(o.pan / 100, t, 0.03);
   }
 
-  /** Time-domain samples decimated from the first 2048. */
-  readWaveform(points: number): number[] | null {
-    const g = this.graph;
-    if (!g || !this.voice || points < 1) return null;
-    g.analyser.getFloatTimeDomainData(g.wave);
-    const step = Math.max(1, Math.floor(WAVE_WINDOW / points));
-    const pts: number[] = [];
-    for (let i = 0; i < points; i++) pts.push(g.wave[i * step] ?? 0);
-    return pts;
-  }
-
-  /** Smoothed average power per band in dB (−120 for empty bands). */
-  measureBands(bands: readonly { lo: number; hi: number }[]): number[] | null {
-    const g = this.graph;
-    if (!g || !this.voice) return null;
-    g.analyser.getFloatFrequencyData(g.freq);
-    const binHz = g.ctx.sampleRate / g.analyser.fftSize;
-    const out: number[] = [];
-    for (const band of bands) {
-      const lo = Math.max(1, Math.floor(band.lo / binHz));
-      const hi = Math.max(lo + 1, Math.ceil(band.hi / binHz));
-      let sum = 0;
-      let n = 0;
-      for (let k = lo; k < hi && k < g.freq.length; k++) {
-        sum += Math.pow(10, g.freq[k]! / 10);
-        n++;
-      }
-      out.push(n && sum > 0 ? 10 * Math.log10(sum / n) : -120);
-    }
-    const prev = this.bands;
-    if (!prev || prev.length !== out.length) this.bands = out;
-    else for (let j = 0; j < out.length; j++) prev[j] = prev[j]! * 0.8 + out[j]! * 0.2;
-    return this.bands ? [...this.bands] : null;
-  }
-
-  /** Linear fade of the timer gain to 0; resolves 'done' (caller then pauses). */
-  fadeOut(seconds: number): Promise<FadeResult> {
-    this.abortFade(false);
-    const g = this.graph;
-    if (!g || !this.isPlaying) return Promise.resolve('done');
-    const p = g.timerGain.gain;
-    const now = g.ctx.currentTime;
-    p.cancelScheduledValues(now);
-    p.setValueAtTime(p.value, now);
-    p.linearRampToValueAtTime(0, now + seconds);
-    return new Promise<FadeResult>((resolve) => {
-      this.fadeResolve = resolve;
-      this.fadeTimer = setTimeout(() => {
-        this.fadeTimer = null;
-        this.fadeResolve = null;
-        resolve('done');
-      }, seconds * 1000);
-    });
-  }
-
-  /** Abandons a running fadeOut (it resolves 'cancelled') and restores the timer gain to 1. */
-  cancelFade(): void {
-    this.abortFade(true);
-  }
-
   dispose(): void {
     for (const t of [this.stopTimer, this.regenTimer]) if (t !== null) clearTimeout(t);
     this.stopTimer = null;
     this.regenTimer = null;
-    this.abortFade(false);
     this.isPlaying = false;
     this.stopAllVoices();
     if (this.graph) {
@@ -241,7 +165,6 @@ export class NoiseEngine {
     }
     this.graph = null;
     this.buffers.clear();
-    this.bands = null;
   }
 
   // ---- internals ----
@@ -251,9 +174,6 @@ export class NoiseEngine {
     const ctx = this.factory();
     const master = ctx.createGain();
     master.gain.value = 0;
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 8192;
-    analyser.smoothingTimeConstant = 0.85;
     // stereo width: L = c·a + s·b, R = c·a − s·b (a, b = independent noise channels)
     const split = ctx.createChannelSplitter(2);
     const merge = ctx.createChannelMerger(2);
@@ -292,25 +212,20 @@ export class NoiseEngine {
     waveLfo.connect(waveLfoGain);
     waveLfoGain.connect(waveGain.gain);
     waveLfo.start();
-    // sleep-timer fade
-    const timerGain = ctx.createGain();
-    timerGain.gain.value = 1;
     merge.connect(lowCut);
     lowCut.connect(highCut);
     highCut.connect(tiltLow);
     tiltLow.connect(tiltHigh);
     tiltHigh.connect(waveGain);
-    waveGain.connect(timerGain);
     let panner: StereoPannerNode | null = null;
     if (typeof ctx.createStereoPanner === 'function') {
       panner = ctx.createStereoPanner();
       panner.pan.value = o.pan / 100;
-      timerGain.connect(panner);
-      panner.connect(analyser);
+      waveGain.connect(panner);
+      panner.connect(ctx.destination);
     } else {
-      timerGain.connect(analyser);
+      waveGain.connect(ctx.destination);
     }
-    analyser.connect(ctx.destination);
     this.graph = {
       ctx,
       master,
@@ -325,11 +240,7 @@ export class NoiseEngine {
       waveGain,
       waveLfo,
       waveLfoGain,
-      timerGain,
       panner,
-      analyser,
-      wave: new Float32Array(analyser.fftSize),
-      freq: new Float32Array(analyser.frequencyBinCount),
     };
     this.applyOptions(o);
     return this.graph;
@@ -415,38 +326,5 @@ export class NoiseEngine {
     const now = g.ctx.currentTime;
     p.cancelScheduledValues(now);
     p.setTargetAtTime(v, now, tc);
-  }
-
-  private resetTimerGain(tc: number): void {
-    const g = this.graph;
-    if (!g) return;
-    const p = g.timerGain.gain;
-    const now = g.ctx.currentTime;
-    p.cancelScheduledValues(now);
-    p.setTargetAtTime(1, now, tc);
-  }
-
-  /**
-   * Resolves any pending fadeOut with 'cancelled'. With `restore`, the timer
-   * gain returns to 1 now (play); otherwise it holds its current value until
-   * the voice stops (pause), so pausing mid-fade never swells the level.
-   */
-  private abortFade(restore = true): void {
-    if (this.fadeTimer !== null) {
-      clearTimeout(this.fadeTimer);
-      this.fadeTimer = null;
-    }
-    const resolve = this.fadeResolve;
-    this.fadeResolve = null;
-    resolve?.('cancelled');
-    const g = this.graph;
-    if (!g) return;
-    if (restore) this.resetTimerGain(0.08);
-    else {
-      const p = g.timerGain.gain;
-      const now = g.ctx.currentTime;
-      p.cancelScheduledValues(now);
-      p.setValueAtTime(p.value, now);
-    }
   }
 }

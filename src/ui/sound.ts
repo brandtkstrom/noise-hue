@@ -59,7 +59,7 @@ function syncSlider({ def, input, text }: Slider, s: Settings): void {
   setAttr(input, 'aria-valuetext', label);
 }
 
-/** Sound panel: option sliders, value text, changed dots, color-specific group, Reset. */
+/** Sound panel: option sliders, value text, color-specific group, Reset. */
 export function mountSound(settings: Store<Settings>): void {
   const sliders = SLIDERS.map((def): Slider => {
     const input = $(`#${def.id}`) as HTMLInputElement;
@@ -69,9 +69,6 @@ export function mountSound(settings: Store<Settings>): void {
       settings.set({ [def.key]: fromPos(def, Number(input.value)) });
       // a snapped value may equal the stored one (no notify), so re-sync this thumb directly
       syncSlider(slider, settings.get());
-    });
-    input.addEventListener('dblclick', () => {
-      settings.set({ [def.key]: OPTION_DEFAULTS[def.key] });
     });
     return slider;
   });
@@ -84,14 +81,7 @@ export function mountSound(settings: Store<Settings>): void {
   const grpColor = $('#grp-color');
   const grpColorTitle = $('#grp-color-title');
   const blocks = COLOR_BLOCKS.map((id) => ({ id, el: $(`#opts-${id}`) }));
-  const dots = {
-    char: $('#grp-color .changed-dot'),
-    tone: $('#grp-tone .changed-dot'),
-    space: $('#grp-space .changed-dot'),
-    waves: $('#grp-waves .changed-dot'),
-  };
   const wavePeriodField = $('#field-waveperiod');
-  const summary = $('#fold-right-summary');
 
   const render = (s: Settings): void => {
     for (const slider of sliders) syncSlider(slider, s);
@@ -101,14 +91,7 @@ export function mountSound(settings: Store<Settings>): void {
     if (hasColorOpts) setText(grpColorTitle, `${getNoise(s.type).name} settings`);
     for (const b of blocks) setHidden(b.el, b.id !== s.type);
 
-    const changes = m.changeSummary(s);
-    setHidden(dots.char, !changes.char);
-    setHidden(dots.tone, !changes.tone);
-    setHidden(dots.space, !changes.space);
-    setHidden(dots.waves, !changes.waves);
-
     toggleClass(wavePeriodField, 'is-dim', s.waveDepth === 0);
-    setText(summary, changes.count === 0 ? 'Defaults' : `${changes.count} changed`);
   };
 
   settings.subscribe((s) => render(s));

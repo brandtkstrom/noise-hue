@@ -2,7 +2,7 @@ import type { NoiseEngine } from '../audio/engine';
 import { ALL_COLOR_OPTION_KEYS, colorKeysFor } from '../noise/catalog';
 import { OPTION_KEYS } from '../state/defaults';
 import { volumeGain } from '../state/mappings';
-import { optionsOf } from '../state/presets';
+import { optionsOf } from '../state/mappings';
 import type { Store } from '../state/store';
 import type { Settings } from '../types';
 
