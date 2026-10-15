@@ -1,0 +1,5 @@
+<!-- Pre-JS default; the running app recolors the dot to the selected noise color (src/ui/favicon.ts). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#0e1116" />
+  <circle cx="16" cy="16" r="9" fill="#e8e6e3" />
+</svg>
