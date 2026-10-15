@@ -439,12 +439,14 @@ summary:focus-visible {
   }
   .player {
     display: grid;
-    padding: 1.5rem 1rem;
     grid-template-rows: auto;
     grid-template-columns: 1fr 4fr 1fr;
     grid-template-areas:
           "control state none"
           "volume volume volume";
+  }
+  .play-btn {
+      margin: 0;
   }
 }
 
